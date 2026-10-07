@@ -17,13 +17,25 @@ search.maven.org.
 from __future__ import annotations
 
 import json
+import os
 import queue
 import subprocess
 import sys
 import threading
 import time
 
-SERVER_CMD = ["/home/keepee/projects/java-spring-mcp/.venv/bin/java-spring-docs"]
+#: Which server process to spawn.  Override with ``JAVA_SPRING_MCP_E2E_CMD``
+#: (a shell-split command); otherwise use this checkout's ``.venv`` if it has
+#: the console script, else run the module with the interpreter that started
+#: this script (works with any install, editable or not).
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_LOCAL_BIN = os.path.join(_REPO_ROOT, ".venv", "bin", "java-spring-docs")
+if os.environ.get("JAVA_SPRING_MCP_E2E_CMD"):
+    SERVER_CMD = os.environ["JAVA_SPRING_MCP_E2E_CMD"].split()
+elif os.path.exists(_LOCAL_BIN):
+    SERVER_CMD = [_LOCAL_BIN]
+else:
+    SERVER_CMD = [sys.executable, "-m", "java_spring_mcp.server"]
 PROTOCOL_VERSION = "2025-03-26"
 PER_CALL_TIMEOUT = 120.0
 FIRST_CALL_TIMEOUT = 300.0

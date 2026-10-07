@@ -59,7 +59,7 @@ MAVEN_SEARCH_URL = "https://search.maven.org/solrsearch/select"
 #: ``User-agent:``-specific robots rules, because a robots file can only match
 #: a token it can see.
 USER_AGENT = (
-    "java-spring-mcp/0.1 (+https://github.com/KEEPEE/java-spring-mcp)"
+    "java-spring-mcp/0.2 (+https://github.com/KEEPEE/java-spring-mcp)"
 )
 
 #: Kept only as a compatibility alias (``server`` used to import it for its
@@ -767,7 +767,7 @@ def fetch_maven_artifact(
             "error": "artifact not found on Maven Central",
             "suggestion": (
                 f"No results for '{where}'. Verify the coordinates, or retry without a "
-                f"group id: fetch_maven_artifact(None, {artifact!r})"
+                f"group id: maven_package({artifact!r})"
             ),
         }
 
