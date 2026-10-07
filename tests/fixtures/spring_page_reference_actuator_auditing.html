@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang='en'><head><title>reference actuator auditing</title></head>
+<body>
+<div class="context">
+<span class="title">Spring Boot</span>
+<span class="version">4.1.1</span>
+
+
+</div><article class="doc">
+<div class="breadcrumbs-container">
+<nav aria-label="breadcrumbs" class="breadcrumbs">
+<ul>
+<li id="copy-url" title="Copy versioned URL"></li>
+<li><a href="../../index.html">Spring Boot</a></li>
+<li><a href="../index.html">Reference</a></li>
+<li><a href="index.html">Production-ready Features</a></li>
+<li><a href="auditing.html">Auditing</a></li>
+</ul>
+</nav>
+</div><h1 class="page" id="page-title">Auditing</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Once Spring Security is in play, Spring Boot Actuator has a flexible audit framework that publishes events (by default, “authentication success”, “failure” and “access denied” exceptions).
+This feature can be very useful for reporting and for implementing a lock-out policy based on authentication failures.</p>
+</div>
+<div class="paragraph">
+<p>You can enable auditing by providing a bean of type <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/actuate/audit/AuditEventRepository.html"><code>AuditEventRepository</code></a> in your application’s configuration.
+For convenience, Spring Boot offers an <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/actuate/audit/InMemoryAuditEventRepository.html"><code>InMemoryAuditEventRepository</code></a>.
+<a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/actuate/audit/InMemoryAuditEventRepository.html"><code>InMemoryAuditEventRepository</code></a> has limited capabilities, and we recommend using it only for development environments.
+For production environments, consider creating your own alternative <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/actuate/audit/AuditEventRepository.html"><code>AuditEventRepository</code></a> implementation.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="actuator.auditing.custom"><a class="anchor" href="#actuator.auditing.custom"></a>Custom Auditing</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To customize published security events, you can provide your own implementations of <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/actuate/security/AbstractAuthenticationAuditListener.html"><code>AbstractAuthenticationAuditListener</code></a> and <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/actuate/security/AbstractAuthorizationAuditListener.html"><code>AbstractAuthorizationAuditListener</code></a>.</p>
+</div>
+<div class="paragraph">
+<p>You can also use the audit services for your own business events.
+To do so, either inject the <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/actuate/audit/AuditEventRepository.html"><code>AuditEventRepository</code></a> bean into your own components and use that directly or publish an <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/actuate/audit/listener/AuditApplicationEvent.html"><code>AuditApplicationEvent</code></a> with the Spring <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/ApplicationEventPublisher.html"><code>ApplicationEventPublisher</code></a> (by implementing <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/ApplicationEventPublisherAware.html"><code>ApplicationEventPublisherAware</code></a>).</p>
+</div>
+</div>
+</div>
+<nav class="pagination">
+<span class="prev"><a href="tracing.html">Tracing</a></span>
+<span class="next"><a href="http-exchanges.html">Recording HTTP Exchanges</a></span>
+</nav>
+</article>
+</body></html>

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang='en'><head><title>SQL Databases (trimmed fixture)</title></head>
+<body>
+<article class="doc">
+<div class="breadcrumbs-container">
+<nav aria-label="breadcrumbs" class="breadcrumbs">
+<ul>
+<li id="copy-url" title="Copy versioned URL"></li>
+<li><a href="../../index.html">Spring Boot</a></li>
+<li><a href="../index.html">Reference</a></li>
+<li><a href="index.html">Data</a></li>
+<li><a href="sql.html">SQL Databases</a></li>
+</ul>
+</nav>
+</div><h1 class="page" id="page-title">SQL Databases</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="https://spring.io/projects/spring-framework">Spring Framework</a> provides extensive support for working with SQL databases, from direct JDBC access using <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/jdbc/core/simple/JdbcClient.html"><code>JdbcClient</code></a> or <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/jdbc/core/JdbcTemplate.html"><code>JdbcTemplate</code></a> to complete “object relational mapping” technologies such as Hibernate.
+<a href="https://spring.io/projects/spring-data">Spring Data</a> provides an additional level of functionality: creating <a class="apiref" href="https://docs.spring.io/spring-data/commons/docs/4.1.x/api/org/springframework/data/repository/Repository.html"><code>Repository</code></a> implementations directly from interfaces and using conventions to generate queries from your method names.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="data.sql.datasource"><a class="anchor" href="#data.sql.datasource"></a>Configure a DataSource</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Java’s <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html"><code>DataSource</code></a> interface provides a standard method of working with database connections.
+Traditionally, a <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html"><code>DataSource</code></a> uses a <code>URL</code> along with some credentials to establish a database connection.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+See the <a class="xref page" href="../../how-to/data-access.html#howto.data-access.configure-custom-datasource">Configure a Custom DataSource</a> section of the “How-to Guides” for more advanced examples, typically to take full control over the configuration of the DataSource.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="data.sql.datasource.embedded"><a class="anchor" href="#data.sql.datasource.embedded"></a>Embedded Database Support</h3>
+<div class="paragraph">
+<p>It is often convenient to develop applications by using an in-memory embedded database.
+Obviously, in-memory databases do not provide persistent storage.
+You need to populate your database when your application starts and be prepared to throw away data when your application ends.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The “How-to Guides” section includes a <a class="xref page" href="../../how-to/data-initialization.html">section on how to initialize a database</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Spring Boot can auto-configure embedded <a href="https://www.h2database.com">H2</a>, <a href="https://hsqldb.org/">HSQL</a>, and <a href="https://db.apache.org/derby/">Derby</a> (deprecated) databases.
+You need not provide any connection URLs.
+You need only include a build dependency to the embedded database that you want to use.
+If there are multiple embedded databases on the classpath, set the <code>spring.datasource.embedded-database-connection</code> configuration property to control which one is used.
+Setting the property to <code>none</code> disables auto-configuration of an embedded database.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If you are using this feature in your tests, you may notice that the same database is reused by your whole test suite regardless of the number of application contexts that you use.
+If you want to make sure that each context has a separate embedded database, you should set <code>spring.datasource.generate-unique-name</code> to <code>true</code>.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>For example, the typical POM dependencies would be as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+	&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+	&lt;artifactId&gt;spring-boot-starter-data-jpa&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+	&lt;groupId&gt;org.hsqldb&lt;/groupId&gt;
+	&lt;artifactId&gt;hsqldb&lt;/artifactId&gt;
+	&lt;scope&gt;runtime&lt;/scope&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+You need a dependency on <code>spring-jdbc</code> for an embedded database to be auto-configured.
+In this example, it is pulled in transitively through <code>spring-boot-starter-data-jpa</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If, for whatever reason, you do configure the connection URL for an embedded database, take care to ensure that the database’s automatic shutdown is disabled.
+If you use H2, you should use <code>DB_CLOSE_ON_EXIT=FALSE</code> to do so.
+If you use HSQLDB, you should ensure that <code>shutdown=true</code> is not used.
+Disabling the database’s automatic shutdown lets Spring Boot control when the database is closed, thereby ensuring that it happens once access to the database is no longer needed.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="data.sql.datasource.production"><a class="anchor" href="#data.sql.datasource.production"></a>Connection to a Production Database</h3>
+<div class="paragraph">
+<p>Production database connections can also be auto-configured by using a pooling <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html"><code>DataSource</code></a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="data.sql.datasource.configuration"><a class="anchor" href="#data.sql.datasource.configuration"></a>DataSource Configuration</h3>
+<div class="paragraph">
+<p>DataSource configuration is controlled by external configuration properties in <code>spring.datasource.*</code>.
+For example, you might declare the following section in <code>application.properties</code>:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_1">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_1_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_1_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_1_properties" class="tabpanel" id="_tabs_1_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.datasource.url=jdbc:mysql://localhost/test
+spring.datasource.username=dbuser
+spring.datasource.password=dbpass</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_1_yaml" class="tabpanel" id="_tabs_1_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  datasource:
+    url: "jdbc:mysql://localhost/test"
+    username: "dbuser"
+    password: "dbpass"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+You should at least specify the URL by setting the <code>spring.datasource.url</code> property.
+Otherwise, Spring Boot tries to auto-configure an embedded database.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Spring Boot can deduce the JDBC driver class for most databases from the URL.
+If you need to specify a specific class, you can use the <code>spring.datasource.driver-class-name</code> property.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+For a pooling <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html"><code>DataSource</code></a> to be created, we need to be able to verify that a valid <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/java/sql/Driver.html"><code>Driver</code></a> class is available, so we check for that before doing anything.
+In other words, if you set <code>spring.datasource.driver-class-name=com.mysql.jdbc.Driver</code>, then that class has to be loadable.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>See <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/jdbc/autoconfigure/DataSourceProperties.html"><code>DataSourceProperties</code></a> API documentation for more of the supported options.
+These are the standard options that work regardless of <a href="#data.sql.datasource.connection-pool">the actual implementation</a>.
+It is also possible to fine-tune implementation-specific settings by using their respective prefix (<code>spring.datasource.hikari.*</code>, <code>spring.datasource.tomcat.*</code>, <code>spring.datasource.dbcp2.*</code>, and <code>spring.datasource.oracleucp.*</code>).
+See the documentation of the connection pool implementation you are using for more details.</p>
+</div>
+<div class="paragraph">
+<p>For instance, if you use the <a href="https://tomcat.apache.org/tomcat-11.0-doc/jdbc-pool.html#Common_Attributes">Tomcat connection pool</a>, you could customize many additional settings, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_2">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_2_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_2_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_2_properties" class="tabpanel" id="_tabs_2_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.datasource.tomcat.max-wait=10000
+spring.datasource.tomcat.max-active=50
+spring.datasource.tomcat.test-on-borrow=true</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_2_yaml" class="tabpanel" id="_tabs_2_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  datasource:
+    tomcat:
+      max-wait: 10000
+      max-active: 50
+      test-on-borrow: true</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>This will set the pool to wait 10000ms before throwing an exception if no connection is available, limit the maximum number of connections to 50 and validate the connection before borrowing it from the pool.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="data.sql.datasource.connection-pool"><a class="anchor" href="#data.sql.datasource.connection-pool"></a>Supported Connection Pools</h3>
+<div class="paragraph">
+<p>Spring Boot uses the following algorithm for choosing a specific implementation:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>We prefer <a href="https://github.com/brettwooldridge/HikariCP">HikariCP</a> for its performance and concurrency.
+If HikariCP is available, we always choose it.</p>
+</li>
+<li>
+<p>Otherwise, if the Tomcat pooling <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html"><code>DataSource</code></a> is available, we use it.</p>
+</li>
+<li>
+<p>Otherwise, if <a href="https://commons.apache.org/proper/commons-dbcp/">Commons DBCP2</a> is available, we use it.</p>
+</li>
+<li>
+<p>If none of HikariCP, Tomcat, and DBCP2 are available and if Oracle UCP is available, we use it.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If you use the <code>spring-boot-starter-jdbc</code> or <code>spring-boot-starter-data-jpa</code> starters, you automatically get a dependency to HikariCP.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>You can bypass that algorithm completely and specify the connection pool to use by setting the <code>spring.datasource.type</code> property.
+This is especially important if you run your application in a Tomcat container, as <code>tomcat-jdbc</code> is provided by default.</p>
+</div>
+<div class="paragraph">
+<p>Additional connection pools can always be configured manually, using <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/jdbc/DataSourceBuilder.html"><code>DataSourceBuilder</code></a>.
+If you define your own <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html"><code>DataSource</code></a> bean, auto-configuration does not occur.
+The following connection pools are supported by <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/jdbc/DataSourceBuilder.html"><code>DataSourceBuilder</code></a>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>HikariCP</p>
+</li>
+<li>
+<p>Tomcat pooling <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html"><code>DataSource</code></a></p>
+</li>
+<li>
+<p>Commons DBCP2</p>
+</li>
+<li>
+<p>Oracle UCP &amp; <code>OracleDataSource</code></p>
+</li>
+<li>
+<p>Spring Framework’s <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/jdbc/datasource/SimpleDriverDataSource.html"><code>SimpleDriverDataSource</code></a></p>
+</li>
+<li>
+<p>H2 <a class="apiref" href="https://www.h2database.com/javadoc/org/h2/jdbcx/JdbcDataSource.html"><code>JdbcDataSource</code></a></p>
+</li>
+<li>
+<p>PostgreSQL <a class="apiref" href="https://jdbc.postgresql.org/documentation/publicapi/org/postgresql/ds/PGSimpleDataSource.html"><code>PGSimpleDataSource</code></a></p>
+</li>
+<li>
+<p>C3P0</p>
+</li>
+<li>
+<p>Vibur</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="data.sql.datasource.jndi"><a class="anchor" href="#data.sql.datasource.jndi"></a>Connection to a JNDI DataSource</h3>
+<div class="paragraph">
+<p>If you deploy your Spring Boot application to an Application Server, you might want to configure and manage your DataSource by using your Application Server’s built-in features and access it by using JNDI.</p>
+</div>
+<div class="paragraph">
+<p>The <code>spring.datasource.jndi-name</code> property can be used as an alternative to the <code>spring.datasource.url</code>, <code>spring.datasource.username</code>, and <code>spring.datasource.password</code> properties to access the <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html"><code>DataSource</code></a> from a specific JNDI location.
+For example, the following section in <code>application.properties</code> shows how you can access a JBoss AS defined <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.sql/javax/sql/DataSource.html"><code>DataSource</code></a>:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_3">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_3_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_3_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_3_properties" class="tabpanel" id="_tabs_3_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.datasource.jndi-name=java:jboss/datasources/customers</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_3_yaml" class="tabpanel" id="_tabs_3_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  datasource:
+    jndi-name: "java:jboss/datasources/customers"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="data.sql.datasource.lazy-connection"><a class="anchor" href="#data.sql.datasource.lazy-connection"></a>Lazy Connection Proxy</h3>
+<div class="paragraph">
+<p>When a pooled <code>DataSource</code> is auto-configured, it can be wrapped in a proxy that fetches JDBC connections as late as possible by setting <code>spring.datasource.connection-fetch</code> to <code>lazy</code>, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_4">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_4_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_4_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_4_properties" class="tabpanel" id="_tabs_4_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.datasource.connection-fetch=lazy</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_4_yaml" class="tabpanel" id="_tabs_4_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  datasource:
+    connection-fetch: "lazy"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>With this feature enabled, JDBC Connections are only fetched from the pool when actually necessary.
+JDBC transaction control can happen without fetching a Connection from the pool or communicating with the database; this will be done lazily on the first creation of a JDBC Statement.
+To get access to the target auto-configured <code>DataSource</code>, use <code>DataSource.unwrap</code>.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If you are wrapping the target <code>DataSource</code> in a <code>TransactionAwareDataSourceProxy</code>, make sure to do so with a <code>BeanPostProcessor</code> that has a positive order.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>See <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/jdbc/datasource/LazyConnectionDataSourceProxy.html"><code>LazyConnectionDataSourceProxy</code></a> for more details.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div class="sect1">
+<h2 id="data.sql.jpa-and-spring-data"><a class="anchor" href="#data.sql.jpa-and-spring-data"></a>JPA and Spring Data JPA</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Java Persistence API is a standard technology that lets you “map” objects to relational databases.
+The <code>spring-boot-starter-data-jpa</code> POM provides a quick way to get started.
+It provides the following key dependencies:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Hibernate: One of the most popular JPA implementations.</p>
+</li>
+<li>
+<p>Spring Data JPA: Helps you to implement JPA-based repositories.</p>
+</li>
+<li>
+<p>Spring ORM: Core ORM support from the Spring Framework.</p>
+</li>
+</ul>
+</div>
+
+
+
+
+
+
+</div>
+</div>
+
+
+
+
+<nav class="pagination">
+<span class="prev"><a href="index.html">Data</a></span>
+<span class="next"><a href="nosql.html">Working with NoSQL Technologies</a></span>
+</nav>
+</article>
+</body></html>

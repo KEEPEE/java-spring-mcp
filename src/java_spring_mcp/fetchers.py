@@ -76,7 +76,23 @@ TIMEOUTS = (5.0, 10.0, REQUEST_TIMEOUT)
 #: The only hosts this module ever contacts.  Handed to the politeness layer as
 #: an allowlist so an unexpected redirect or a malformed identifier can never
 #: turn a docs lookup into a request to somebody else's site.
-ALLOWED_HOSTS = frozenset({"docs.oracle.com", "docs.spring.io", "search.maven.org"})
+#:
+#: The Spring layer (``java_spring_mcp.spring``) added the three hosts its tools
+#: need, each checked against its own robots.txt before it was listed:
+#: ``spring.io`` (``User-agent: *`` / ``Allow: /``, plus a ``Sitemap:`` line),
+#: ``start.spring.io`` (robots.txt answers ``404`` — no file, no rule) and
+#: ``api.github.com`` (also ``404``; the REST quota, not robots, is what limits
+#: it: 60 unauthenticated requests per hour per IP).
+ALLOWED_HOSTS = frozenset(
+    {
+        "docs.oracle.com",
+        "docs.spring.io",
+        "search.maven.org",
+        "spring.io",
+        "start.spring.io",
+        "api.github.com",
+    }
+)
 
 #: Hard cap on **requests on the wire** for one MCP tool call (A2 §4.3
 #: ``MAX_REQUESTS_PER_TOOL_CALL``).  Since A8 F3 one budget unit *is* one
@@ -291,10 +307,20 @@ class _Response:
         return _json.loads(self.text)
 
 
-def _client() -> httpx.Client:
-    """The one place an ``httpx.Client`` is built in this module."""
+def _client(extra_headers: dict | None = None) -> httpx.Client:
+    """The one place an ``httpx.Client`` is built in this module.
+
+    ``extra_headers`` is for endpoints that negotiate their representation with
+    ``Accept`` — Initializr serves the v2.1 metadata shape, GitHub serves its
+    REST shape.  Neither can hide who is asking: ``Politeness._get`` passes its
+    own ``user-agent`` on every request, and a per-request header overrides a
+    client default, so the honest UA always wins.
+    """
+    headers = {"User-Agent": USER_AGENT}
+    if extra_headers:
+        headers.update(extra_headers)
     return httpx.Client(
-        timeout=REQUEST_TIMEOUT, follow_redirects=True, headers={"User-Agent": USER_AGENT}
+        timeout=REQUEST_TIMEOUT, follow_redirects=True, headers=headers
     )
 
 
@@ -319,6 +345,7 @@ def _http_get(
     budget_scope: str | None = None,
     budget_limit: int = FETCH_BUDGET_LIMIT,
     revalidate: bool = True,
+    headers: dict | None = None,
 ) -> _Response:
     """GET ``url`` through the politeness layer.  Never raises.
 
@@ -333,6 +360,9 @@ def _http_get(
     response for the same URL are read from :class:`DocCache` and offered as
     ``If-None-Match`` / ``If-Modified-Since``, and a fresh ``200`` writes them
     back. Both are passed together or not at all (A3 §5.4).
+
+    ``headers`` sets client-level request headers (``Accept`` for the endpoints
+    that need one).  It cannot replace the user-agent — the layer sends its own.
     """
     if params:
         url = f"{url}?{urlencode(params)}"
@@ -345,7 +375,7 @@ def _http_get(
     if revalidate:
         validators, cached_body = _revalidation_for(url)
 
-    with _client() as client:
+    with _client(headers) as client:
         response = get_politeness().get(
             client,
             url,

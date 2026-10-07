@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang='en'><head><title>reference using running-your-application</title></head>
+<body>
+<div class="context">
+<span class="title">Spring Boot</span>
+<span class="version">4.1.1</span>
+
+
+</div><article class="doc">
+<div class="breadcrumbs-container">
+<nav aria-label="breadcrumbs" class="breadcrumbs">
+<ul>
+<li id="copy-url" title="Copy versioned URL"></li>
+<li><a href="../../index.html">Spring Boot</a></li>
+<li><a href="../index.html">Reference</a></li>
+<li><a href="index.html">Developing with Spring Boot</a></li>
+<li><a href="running-your-application.html">Running Your Application</a></li>
+</ul>
+</nav>
+</div><h1 class="page" id="page-title">Running Your Application</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>One of the biggest advantages of packaging your application as a jar and using an embedded HTTP server is that you can run your application as you would any other.
+The same applies to debugging Spring Boot applications.
+You do not need any special IDE plugins or extensions.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The options below are best suited for running an application locally for development.
+For production deployment, see <a class="xref page" href="packaging-for-production.html">Packaging Your Application for Production</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This section only covers jar-based packaging.
+If you choose to package your application as a war file, see your server and IDE documentation.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="using.running-your-application.from-an-ide"><a class="anchor" href="#using.running-your-application.from-an-ide"></a>Running From an IDE</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can run a Spring Boot application from your IDE as a Java application.
+However, you first need to import your project.
+Import steps vary depending on your IDE and build system.
+Most IDEs can import Maven projects directly.
+For example, Eclipse users can select <code>Import…​</code> → <code>Existing Maven Projects</code> from the <code>File</code> menu.</p>
+</div>
+<div class="paragraph">
+<p>If you cannot directly import your project into your IDE, you may be able to generate IDE metadata by using a build plugin.
+Maven includes plugins for <a href="https://maven.apache.org/plugins/maven-eclipse-plugin/">Eclipse</a> and <a href="https://maven.apache.org/plugins/maven-idea-plugin/">IntelliJ IDEA</a>.
+Gradle offers plugins for <a href="https://docs.gradle.org/current/userguide/userguide.html">various IDEs</a>.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If you accidentally run a web application twice, you see a “Port already in use” error.
+Spring Tools users can use the <code>Relaunch</code> button rather than the <code>Run</code> button to ensure that any existing instance is closed.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="using.running-your-application.as-a-packaged-application"><a class="anchor" href="#using.running-your-application.as-a-packaged-application"></a>Running as a Packaged Application</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you use the Spring Boot Maven or Gradle plugins to create an executable jar, you can run your application using <code>java -jar</code>, as shown in the following example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">$ java -jar target/myapplication-0.0.1-SNAPSHOT.jar</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It is also possible to run a packaged application with remote debugging support enabled.
+Doing so lets you attach a debugger to your packaged application, as shown in the following example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">$ java -agentlib:jdwp=server=y,transport=dt_socket,address=8000,suspend=n \
+       -jar target/myapplication-0.0.1-SNAPSHOT.jar</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="using.running-your-application.with-the-maven-plugin"><a class="anchor" href="#using.running-your-application.with-the-maven-plugin"></a>Using the Maven Plugin</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Spring Boot Maven plugin includes a <code>run</code> goal that can be used to quickly compile and run your application.
+Applications run in an exploded form, as they do in your IDE.
+The following example shows a typical Maven command to run a Spring Boot application:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">$ mvn spring-boot:run</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You might also want to use the <code>MAVEN_OPTS</code> operating system environment variable, as shown in the following example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">$ export MAVEN_OPTS=-Xmx1024m</code></pre>
+</div>
+</div>
+</div>
+</div>
+
+
+<nav class="pagination">
+<span class="prev"><a href="using-the-springbootapplication-annotation.html">Using the @SpringBootApplication Annotation</a></span>
+<span class="next"><a href="devtools.html">Developer Tools</a></span>
+</nav>
+</article>
+</body></html>

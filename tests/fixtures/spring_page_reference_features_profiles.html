@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang='en'><head><title>reference features profiles</title></head>
+<body>
+<div class="context">
+<span class="title">Spring Boot</span>
+<span class="version">4.1.1</span>
+
+
+</div><article class="doc">
+<div class="breadcrumbs-container">
+<nav aria-label="breadcrumbs" class="breadcrumbs">
+<ul>
+<li id="copy-url" title="Copy versioned URL"></li>
+<li><a href="../../index.html">Spring Boot</a></li>
+<li><a href="../index.html">Reference</a></li>
+<li><a href="index.html">Core Features</a></li>
+<li><a href="profiles.html">Profiles</a></li>
+</ul>
+</nav>
+</div><h1 class="page" id="page-title">Profiles</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Profiles provide a way to segregate parts of your application configuration and make it be available only in certain environments.
+Any <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/stereotype/Component.html"><code>@Component</code></a>, <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Configuration.html"><code>@Configuration</code></a> or <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/context/properties/ConfigurationProperties.html"><code>@ConfigurationProperties</code></a> can be marked with <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Profile.html"><code>@Profile</code></a> to limit when it is loaded, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_1">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_1_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_1_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_1_java" class="tabpanel" id="_tabs_1_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+@Profile("production")
+public class ProductionConfiguration {
+
+	// ...
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_1_kotlin" class="tabpanel" id="_tabs_1_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Profile
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+@Profile("production")
+class ProductionConfiguration {
+
+	// ...
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/context/properties/ConfigurationProperties.html"><code>@ConfigurationProperties</code></a> beans are registered through <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/context/properties/EnableConfigurationProperties.html"><code>@EnableConfigurationProperties</code></a> instead of automatic scanning, the <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Profile.html"><code>@Profile</code></a> annotation needs to be specified on the <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Configuration.html"><code>@Configuration</code></a> class that has the <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/context/properties/EnableConfigurationProperties.html"><code>@EnableConfigurationProperties</code></a> annotation.
+In the case where <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/context/properties/ConfigurationProperties.html"><code>@ConfigurationProperties</code></a> are scanned, <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Profile.html"><code>@Profile</code></a> can be specified on the <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/context/properties/ConfigurationProperties.html"><code>@ConfigurationProperties</code></a> class itself.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>You can use a <code>spring.profiles.active</code> <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/core/env/Environment.html"><code>Environment</code></a> property to specify which profiles are active.
+You can specify the property in any of the ways described earlier in this chapter.
+For example, you could include it in your <code>application.properties</code>, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_2">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_2_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_2_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_2_properties" class="tabpanel" id="_tabs_2_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.profiles.active=dev,hsqldb</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_2_yaml" class="tabpanel" id="_tabs_2_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  profiles:
+    active: "dev,hsqldb"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>You could also specify it on the command line by using the following switch: <code>--spring.profiles.active=dev,hsqldb</code>.</p>
+</div>
+<div class="paragraph">
+<p>If no profile is active, a default profile is enabled.
+The name of the default profile is <code>default</code> and it can be tuned using the <code>spring.profiles.default</code> <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/core/env/Environment.html"><code>Environment</code></a> property, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_3">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_3_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_3_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_3_properties" class="tabpanel" id="_tabs_3_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.profiles.default=none</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_3_yaml" class="tabpanel" id="_tabs_3_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  profiles:
+    default: "none"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p><code>spring.profiles.active</code> and <code>spring.profiles.default</code> can only be used in non-profile-specific documents.
+This means they cannot be included in <a class="xref page" href="external-config.html#features.external-config.files.profile-specific">profile specific files</a> or <a class="xref page" href="external-config.html#features.external-config.files.activation-properties">documents activated</a> by <code>spring.config.activate.on-profile</code>.</p>
+</div>
+<div class="paragraph">
+<p>For example, the second document configuration is invalid:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_4">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_4_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_4_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_4_properties" class="tabpanel" id="_tabs_4_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.profiles.active=prod
+#---
+spring.config.activate.on-profile=prod
+spring.profiles.active=metrics</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_4_yaml" class="tabpanel" id="_tabs_4_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml"># this document is valid
+spring:
+  profiles:
+    active: "prod"
+---
+# this document is invalid
+spring:
+  config:
+    activate:
+      on-profile: "prod"
+  profiles:
+    active: "metrics"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>spring.profiles.active</code> property follows the same ordering rules as other properties.
+The highest <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/core/env/PropertySource.html"><code>PropertySource</code></a> wins.
+This means that you can specify active profiles in <code>application.properties</code> and then <strong>replace</strong> them by using the command line switch.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+See <a class="xref page" href="external-config.html#features.external-config.order">the “Externalized Configuration”</a> for more details on the order in which property sources are considered.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>By default, profile names in Spring Boot may contain letters, numbers, or permitted characters (<code>-</code>, <code>_</code>, <code>.</code>, <code>+</code>, <code>@</code>).
+In addition, they can only start and end with a letter or number.</p>
+</div>
+<div class="paragraph">
+<p>This restriction helps to prevent common parsing issues.
+if, however, you prefer more flexible profile names you can set <code>spring.profiles.validate</code> to <code>false</code> in your <code>application.properties</code> or <code>application.yaml</code> file:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_5">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_5_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_5_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_5_properties" class="tabpanel" id="_tabs_5_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.profiles.validate=false</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_5_yaml" class="tabpanel" id="_tabs_5_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  profiles:
+    validate: false</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="features.profiles.adding-active-profiles"><a class="anchor" href="#features.profiles.adding-active-profiles"></a>Adding Active Profiles</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Sometimes, it is useful to have properties that <strong>add</strong> to the active profiles rather than replace them.
+The <code>spring.profiles.include</code> property can be used to add active profiles on top of those activated by the <code>spring.profiles.active</code> property.
+The <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/SpringApplication.html"><code>SpringApplication</code></a> entry point also has a Java API for setting additional profiles.
+See the <code>setAdditionalProfiles()</code> method in <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/SpringApplication.html"><code>SpringApplication</code></a>.</p>
+</div>
+<div class="paragraph">
+<p>For example, when an application with the following properties is run, the common and local profiles will be activated even when it runs using the <code>--spring.profiles.active</code> switch:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_6">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_6_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_6_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_6_properties" class="tabpanel" id="_tabs_6_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.profiles.include[0]=common
+spring.profiles.include[1]=local</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_6_yaml" class="tabpanel" id="_tabs_6_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  profiles:
+    include:
+      - "common"
+      - "local"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Included profiles are added before any <code>spring.profiles.active</code> profiles.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The <code>spring.profiles.include</code> property is processed for each property source, as such the usual <a class="xref page" href="external-config.html#features.external-config.typesafe-configuration-properties.merging-complex-types">complex type merging rules</a> for lists do not apply.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Similar to <code>spring.profiles.active</code>, <code>spring.profiles.include</code> can only be used in non-profile-specific documents.
+This means it cannot be included in <a class="xref page" href="external-config.html#features.external-config.files.profile-specific">profile specific files</a> or <a class="xref page" href="external-config.html#features.external-config.files.activation-properties">documents activated</a> by <code>spring.config.activate.on-profile</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Profile groups, which are described in the <a href="#features.profiles.groups">next section</a> can also be used to add active profiles if a given profile is active.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="features.profiles.groups"><a class="anchor" href="#features.profiles.groups"></a>Profile Groups</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Occasionally the profiles that you define and use in your application are too fine-grained and become cumbersome to use.
+For example, you might have <code>proddb</code> and <code>prodmq</code> profiles that you use to enable database and messaging features independently.</p>
+</div>
+<div class="paragraph">
+<p>To help with this, Spring Boot lets you define profile groups.
+A profile group allows you to define a logical name for a related group of profiles.</p>
+</div>
+<div class="paragraph">
+<p>For example, we can create a <code>production</code> group that consists of our <code>proddb</code> and <code>prodmq</code> profiles.</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_7">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_7_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_7_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_7_properties" class="tabpanel" id="_tabs_7_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.profiles.group.production[0]=proddb
+spring.profiles.group.production[1]=prodmq</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_7_yaml" class="tabpanel" id="_tabs_7_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  profiles:
+    group:
+      production:
+      - "proddb"
+      - "prodmq"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Our application can now be started using <code>--spring.profiles.active=production</code> to activate the <code>production</code>, <code>proddb</code> and <code>prodmq</code> profiles in one hit.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Similar to <code>spring.profiles.active</code> and <code>spring.profiles.include</code>, <code>spring.profiles.group</code> can only be used in non-profile-specific documents.
+This means it cannot be included in <a class="xref page" href="external-config.html#features.external-config.files.profile-specific">profile specific files</a> or <a class="xref page" href="external-config.html#features.external-config.files.activation-properties">documents activated</a> by <code>spring.config.activate.on-profile</code>.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="features.profiles.programmatically-setting-profiles"><a class="anchor" href="#features.profiles.programmatically-setting-profiles"></a>Programmatically Setting Profiles</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can programmatically set active profiles by calling <code>SpringApplication.setAdditionalProfiles(…​)</code> before your application runs.
+It is also possible to activate profiles by using Spring’s <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/core/env/ConfigurableEnvironment.html"><code>ConfigurableEnvironment</code></a> interface.</p>
+</div>
+</div>
+</div>
+
+<nav class="pagination">
+<span class="prev"><a href="external-config.html">Externalized Configuration</a></span>
+<span class="next"><a href="logging.html">Logging</a></span>
+</nav>
+</article>
+</body></html>

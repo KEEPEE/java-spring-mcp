@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang='en'><head><title>reference data nosql</title></head>
+<body>
+<div class="context">
+<span class="title">Spring Boot</span>
+<span class="version">4.1.1</span>
+
+
+</div><article class="doc">
+<div class="breadcrumbs-container">
+<nav aria-label="breadcrumbs" class="breadcrumbs">
+<ul>
+<li id="copy-url" title="Copy versioned URL"></li>
+<li><a href="../../index.html">Spring Boot</a></li>
+<li><a href="../index.html">Reference</a></li>
+<li><a href="index.html">Data</a></li>
+<li><a href="nosql.html">Working with NoSQL Technologies</a></li>
+</ul>
+</nav>
+</div><h1 class="page" id="page-title">Working with NoSQL Technologies</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Data provides additional projects that help you access a variety of NoSQL technologies, including:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://spring.io/projects/spring-data-cassandra">Cassandra</a></p>
+</li>
+<li>
+<p><a href="https://spring.io/projects/spring-data-couchbase">Couchbase</a></p>
+</li>
+<li>
+<p><a href="https://spring.io/projects/spring-data-elasticsearch">Elasticsearch</a></p>
+</li>
+<li>
+<p><a href="https://spring.io/projects/spring-data-geode">Geode</a></p>
+</li>
+<li>
+<p><a href="https://spring.io/projects/spring-data-ldap">LDAP</a></p>
+</li>
+<li>
+<p><a href="https://spring.io/projects/spring-data-mongodb">MongoDB</a></p>
+</li>
+<li>
+<p><a href="https://spring.io/projects/spring-data-neo4j">Neo4J</a></p>
+</li>
+<li>
+<p><a href="https://spring.io/projects/spring-data-redis">Redis</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Of these, Spring Boot provides auto-configuration for Cassandra, Couchbase, Elasticsearch, LDAP, MongoDB, Neo4J and Redis.
+Additionally, <a href="https://github.com/spring-projects/spring-boot-data-geode">Spring Boot for Apache Geode</a> provides <a href="https://docs.spring.io/spring-boot-data-geode-build/2.0.x/reference/html5#geode-repositories">auto-configuration for Apache Geode</a>.
+You can make use of the other projects, but you must configure them yourself.
+See the appropriate reference documentation at <a class="bare" href="https://spring.io/projects/spring-data">spring.io/projects/spring-data</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="data.nosql.redis"><a class="anchor" href="#data.nosql.redis"></a>Redis</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://redis.io/">Redis</a> is a cache, message broker, and richly-featured key-value store.
+Spring Boot offers basic auto-configuration for the <a href="https://github.com/redis/lettuce/">Lettuce</a> and <a href="https://github.com/redis/jedis/">Jedis</a> client libraries and the abstractions on top of them provided by <a href="https://github.com/spring-projects/spring-data-redis">Spring Data Redis</a>.</p>
+</div>
+<div class="paragraph">
+<p>There is a <code>spring-boot-starter-data-redis</code> starter for collecting the dependencies in a convenient way.
+By default, it uses <a href="https://github.com/redis/lettuce/">Lettuce</a>.
+That starter handles both traditional and reactive applications.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+We also provide a <code>spring-boot-starter-data-redis-reactive</code> starter for consistency with the other stores with reactive support.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="data.nosql.redis.connecting"><a class="anchor" href="#data.nosql.redis.connecting"></a>Connecting to Redis</h3>
+<div class="paragraph">
+<p>You can inject an auto-configured <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/connection/RedisConnectionFactory.html"><code>RedisConnectionFactory</code></a>, <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/core/StringRedisTemplate.html"><code>StringRedisTemplate</code></a>, or vanilla <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/core/RedisTemplate.html"><code>RedisTemplate</code></a> instance as you would any other Spring Bean.
+The following listing shows an example of such a bean:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_1">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_1_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_1_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_1_java" class="tabpanel" id="_tabs_1_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+</span><span class="fold-block">@Component
+public class MyBean {
+
+	private final StringRedisTemplate template;
+
+	public MyBean(StringRedisTemplate template) {
+		this.template = template;
+	}
+
+</span><span class="fold-block is-hidden-unfolded">	// ...
+
+</span><span class="fold-block is-hidden-folded">	public Boolean someMethod() {
+		return this.template.hasKey("spring");
+	}
+
+</span><span class="fold-block">}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_1_kotlin" class="tabpanel" id="_tabs_1_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import org.springframework.data.redis.core.StringRedisTemplate
+import org.springframework.stereotype.Component
+
+</span><span class="fold-block">@Component
+class MyBean(private val template: StringRedisTemplate) {
+
+</span><span class="fold-block is-hidden-unfolded">	// ...
+
+</span><span class="fold-block is-hidden-folded">	fun someMethod(): Boolean {
+		return template.hasKey("spring")
+	}
+
+</span><span class="fold-block">}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>By default, the instance tries to connect to a Redis server at <code>localhost:6379</code>.
+You can specify custom connection details using <code>spring.data.redis.*</code> properties, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_2">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_2_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_2_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_2_properties" class="tabpanel" id="_tabs_2_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.data.redis.host=localhost
+spring.data.redis.port=6379
+spring.data.redis.database=0
+spring.data.redis.username=user
+spring.data.redis.password=secret</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_2_yaml" class="tabpanel" id="_tabs_2_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  data:
+    redis:
+      host: "localhost"
+      port: 6379
+      database: 0
+      username: "user"
+      password: "secret"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also specify the url of the Redis server directly.
+When setting the url, the host, port, username and password properties are ignored.
+This is shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_3">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_3_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_3_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_3_properties" class="tabpanel" id="_tabs_3_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.data.redis.url=redis://user:secret@localhost:6379
+spring.data.redis.database=0</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_3_yaml" class="tabpanel" id="_tabs_3_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  data:
+    redis:
+      url: "redis://user:secret@localhost:6379"
+      database: 0</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+You can also register an arbitrary number of beans that implement <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/data/redis/autoconfigure/LettuceClientConfigurationBuilderCustomizer.html"><code>LettuceClientConfigurationBuilderCustomizer</code></a> for more advanced customizations.
+<a class="apiref" href="https://javadoc.io/doc/io.lettuce/lettuce-core/7.5.2.RELEASE/io/lettuce/core/resource/ClientResources.html"><code>ClientResources</code></a> can also be customized using <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/data/redis/autoconfigure/ClientResourcesBuilderCustomizer.html"><code>ClientResourcesBuilderCustomizer</code></a>.
+If you use Jedis, <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/data/redis/autoconfigure/JedisClientConfigurationBuilderCustomizer.html"><code>JedisClientConfigurationBuilderCustomizer</code></a> is also available.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Alternatively, you can register a bean of type <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/connection/RedisStandaloneConfiguration.html"><code>RedisStandaloneConfiguration</code></a>, <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/connection/RedisSentinelConfiguration.html"><code>RedisSentinelConfiguration</code></a>, <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/connection/RedisClusterConfiguration.html"><code>RedisClusterConfiguration</code></a>, or <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/connection/RedisStaticMasterReplicaConfiguration.html"><code>RedisStaticMasterReplicaConfiguration</code></a> to take full control over the configuration.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+master/replica is not supported by Jedis.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>If you add your own <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Bean.html"><code>@Bean</code></a> of any of the auto-configured types, it replaces the default (except in the case of <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/core/RedisTemplate.html"><code>RedisTemplate</code></a>, when the exclusion is based on the bean name, <code>redisTemplate</code>, not its type).</p>
+</div>
+<div class="paragraph">
+<p>By default, a pooled connection factory is auto-configured if <code>commons-pool2</code> is on the classpath.</p>
+</div>
+<div class="paragraph">
+<p>The auto-configured <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/connection/RedisConnectionFactory.html"><code>RedisConnectionFactory</code></a> can be configured to use SSL for communication with the server by setting the properties as shown in this example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_4">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_4_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_4_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_4_properties" class="tabpanel" id="_tabs_4_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.data.redis.ssl.enabled=true</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_4_yaml" class="tabpanel" id="_tabs_4_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  data:
+    redis:
+      ssl:
+        enabled: true</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Custom SSL trust material can be configured in an <a class="xref page" href="../features/ssl.html">SSL bundle</a> and applied to the <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/connection/RedisConnectionFactory.html"><code>RedisConnectionFactory</code></a> as shown in this example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_5">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_5_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_5_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_5_properties" class="tabpanel" id="_tabs_5_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.data.redis.ssl.bundle=example</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_5_yaml" class="tabpanel" id="_tabs_5_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  data:
+    redis:
+      ssl:
+        bundle: "example"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="data.nosql.redis.receiving"><a class="anchor" href="#data.nosql.redis.receiving"></a>Receiving a Message</h3>
+<div class="paragraph">
+<p>When the Redis infrastructure is present, any bean can be annotated with <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/annotation/RedisListener.html"><code>@RedisListener</code></a> to create a listener endpoint.
+If no <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/listener/RedisMessageListenerContainer.html"><code>RedisMessageListenerContainer</code></a> has been defined, a default one is configured automatically.</p>
+</div>
+<div class="paragraph">
+<p>The following component creates a listener endpoint on the <code>someChannel</code> channel:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_6">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_6_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_6_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_6_java" class="tabpanel" id="_tabs_6_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import org.springframework.data.redis.annotation.RedisListener;
+import org.springframework.stereotype.Component;
+
+</span><span class="fold-block">@Component
+public class MyBean {
+
+	@RedisListener("someChannel")
+	public void processMessage(String content) {
+		// ...
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_6_kotlin" class="tabpanel" id="_tabs_6_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import org.springframework.data.redis.annotation.RedisListener
+import org.springframework.stereotype.Component
+
+</span><span class="fold-block">@Component
+class MyBean {
+
+	@RedisListener("someChannel")
+	fun processMessage(content: String) {
+		// ...
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+See the <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/annotation/EnableRedisListeners.html"><code>@EnableRedisListeners</code></a> API documentation for more details.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>If you need to create more <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/listener/RedisMessageListenerContainer.html"><code>RedisMessageListenerContainer</code></a> instances or if you want to override the default, Spring Boot provides a <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/data/redis/autoconfigure/RedisMessageListenerContainerConfigurer.html"><code>RedisMessageListenerContainerConfigurer</code></a> that you can use to initialize a <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/listener/RedisMessageListenerContainer.html"><code>RedisMessageListenerContainer</code></a> with the same settings as the one that is auto-configured.</p>
+</div>
+<div class="paragraph">
+<p>For instance, the following example exposes another container that uses a specific <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/connection/RedisConnectionFactory.html"><code>RedisConnectionFactory</code></a>:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_7">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_7_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_7_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_7_java" class="tabpanel" id="_tabs_7_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import org.springframework.boot.data.redis.autoconfigure.RedisMessageListenerContainerConfigurer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+public class MyRedisConfiguration {
+
+	@Bean
+	public RedisMessageListenerContainer myRedisMessageListenerContainer(
+			RedisMessageListenerContainerConfigurer configurer, RedisConnectionFactory connectionFactory) {
+		RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+		configurer.configure(container, connectionFactory);
+		// ... custom configuration
+		return container;
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_7_kotlin" class="tabpanel" id="_tabs_7_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import org.springframework.boot.data.redis.autoconfigure.RedisMessageListenerContainerConfigurer
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.data.redis.connection.RedisConnectionFactory
+import org.springframework.data.redis.listener.RedisMessageListenerContainer
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+class MyRedisConfiguration {
+
+	@Bean
+	fun myRedisMessageListenerContainer(
+		configurer: RedisMessageListenerContainerConfigurer,
+		connectionFactory: RedisConnectionFactory
+	): RedisMessageListenerContainer {
+		val container = RedisMessageListenerContainer()
+		configurer.configure(container, connectionFactory)
+		// ... custom configuration
+		return container
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Then you can use the container in any <a class="apiref" href="https://docs.spring.io/spring-data/redis/docs/4.1.x/api/org/springframework/data/redis/annotation/RedisListener.html"><code>@RedisListener</code></a>-annotated method as follows:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_8">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_8_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_8_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_8_java" class="tabpanel" id="_tabs_8_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import org.springframework.data.redis.annotation.RedisListener;
+import org.springframework.stereotype.Component;
+
+</span><span class="fold-block">@Component
+public class MyBean {
+
+	@RedisListener(topic = "someChannel", container = "myRedisMessageListenerContainer")
+	public void processMessage(String content) {
+		// ...
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_8_kotlin" class="tabpanel" id="_tabs_8_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+
+
+
+
+<nav class="pagination">
+<span class="prev"><a href="sql.html">SQL Databases</a></span>
+<span class="next"><a href="../io/index.html">IO</a></span>
+</nav>
+</article>
+</body></html>

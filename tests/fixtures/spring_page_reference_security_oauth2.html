@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang='en'><head><title>reference security oauth2</title></head>
+<body>
+<div class="context">
+<span class="title">Spring Boot</span>
+<span class="version">4.1.1</span>
+
+
+</div><article class="doc">
+<div class="breadcrumbs-container">
+<nav aria-label="breadcrumbs" class="breadcrumbs">
+<ul>
+<li id="copy-url" title="Copy versioned URL"></li>
+<li><a href="../../index.html">Spring Boot</a></li>
+<li><a href="../index.html">Reference</a></li>
+<li><a href="index.html">Security</a></li>
+<li><a href="oauth2.html">OAuth2</a></li>
+</ul>
+</nav>
+</div><h1 class="page" id="page-title">OAuth2</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://oauth.net/2/">OAuth2</a> is a widely used authorization framework.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="security.oauth2.client"><a class="anchor" href="#security.oauth2.client"></a>Client</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you have <code>spring-security-oauth2-client</code> on your classpath, you can take advantage of some auto-configuration to set up OAuth2/Open ID Connect clients.
+This configuration makes use of the properties under <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/security/oauth2/client/autoconfigure/OAuth2ClientProperties.html"><code>OAuth2ClientProperties</code></a>.
+The same properties are applicable to both servlet and reactive web applications.</p>
+</div>
+<div class="paragraph">
+<p>Each registration must specify an OAuth 2 provider.
+When set, the value of the <code>spring.security.oauth2.client.registration.&lt;registration-id&gt;.provider</code> property is used to specify the registration’s provider.
+If the <code>provider</code> property is not set, the registration’s ID is used instead.
+Both approaches are shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_1">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_1_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_1_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_1_properties" class="tabpanel" id="_tabs_1_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.security.oauth2.client.registration.my-client.client-id=abcd
+spring.security.oauth2.client.registration.my-client.client-secret=password
+spring.security.oauth2.client.registration.my-client.provider=example
+spring.security.oauth2.client.registration.example.client-id=abcd
+spring.security.oauth2.client.registration.example.client-secret=password</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_1_yaml" class="tabpanel" id="_tabs_1_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          my-client:
+            client-id: "abcd"
+            client-secret: "password"
+            provider: "example"
+          example:
+            client-id: "abcd"
+            client-secret: "password"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>The registrations <code>my-client</code> and <code>example</code> will both use the provider with ID <code>example</code>.
+The former will do so due to the value of the <code>spring.security.oauth2.client.registration.my-client.provider</code> property.
+The latter will do so due to its ID being <code>example</code> and there being no <code>provider</code> property configured for the registration.</p>
+</div>
+<div class="paragraph">
+<p>The specified provider can either be a reference to a provider configured using <code>spring.security.oauth2.client.provider.&lt;provider-id&gt;.*</code> properties or one of the <a href="#security.oauth2.client.common-providers">known common providers</a>.</p>
+</div>
+<div class="paragraph">
+<p>You can register multiple OAuth2 clients and providers under the <code>spring.security.oauth2.client</code> prefix, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_2">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_2_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_2_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_2_properties" class="tabpanel" id="_tabs_2_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.security.oauth2.client.registration.my-login-client.client-id=abcd
+spring.security.oauth2.client.registration.my-login-client.client-secret=password
+spring.security.oauth2.client.registration.my-login-client.client-name=Client for OpenID Connect
+spring.security.oauth2.client.registration.my-login-client.provider=my-oauth-provider
+spring.security.oauth2.client.registration.my-login-client.scope=openid,profile,email,phone,address
+spring.security.oauth2.client.registration.my-login-client.redirect-uri={baseUrl}/login/oauth2/code/{registrationId}
+spring.security.oauth2.client.registration.my-login-client.client-authentication-method=client_secret_basic
+spring.security.oauth2.client.registration.my-login-client.authorization-grant-type=authorization_code
+spring.security.oauth2.client.registration.my-client-1.client-id=abcd
+spring.security.oauth2.client.registration.my-client-1.client-secret=password
+spring.security.oauth2.client.registration.my-client-1.client-name=Client for user scope
+spring.security.oauth2.client.registration.my-client-1.provider=my-oauth-provider
+spring.security.oauth2.client.registration.my-client-1.scope=user
+spring.security.oauth2.client.registration.my-client-1.redirect-uri={baseUrl}/authorized/user
+spring.security.oauth2.client.registration.my-client-1.client-authentication-method=client_secret_basic
+spring.security.oauth2.client.registration.my-client-1.authorization-grant-type=authorization_code
+spring.security.oauth2.client.registration.my-client-2.client-id=abcd
+spring.security.oauth2.client.registration.my-client-2.client-secret=password
+spring.security.oauth2.client.registration.my-client-2.client-name=Client for email scope
+spring.security.oauth2.client.registration.my-client-2.provider=my-oauth-provider
+spring.security.oauth2.client.registration.my-client-2.scope=email
+spring.security.oauth2.client.registration.my-client-2.redirect-uri={baseUrl}/authorized/email
+spring.security.oauth2.client.registration.my-client-2.client-authentication-method=client_secret_basic
+spring.security.oauth2.client.registration.my-client-2.authorization-grant-type=authorization_code
+spring.security.oauth2.client.provider.my-oauth-provider.authorization-uri=https://my-auth-server.com/oauth2/authorize
+spring.security.oauth2.client.provider.my-oauth-provider.token-uri=https://my-auth-server.com/oauth2/token
+spring.security.oauth2.client.provider.my-oauth-provider.user-info-uri=https://my-auth-server.com/userinfo
+spring.security.oauth2.client.provider.my-oauth-provider.user-info-authentication-method=header
+spring.security.oauth2.client.provider.my-oauth-provider.jwk-set-uri=https://my-auth-server.com/oauth2/jwks
+spring.security.oauth2.client.provider.my-oauth-provider.user-name-attribute=name</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_2_yaml" class="tabpanel" id="_tabs_2_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          my-login-client:
+            client-id: "abcd"
+            client-secret: "password"
+            client-name: "Client for OpenID Connect"
+            provider: "my-oauth-provider"
+            scope: "openid,profile,email,phone,address"
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            client-authentication-method: "client_secret_basic"
+            authorization-grant-type: "authorization_code"
+
+          my-client-1:
+            client-id: "abcd"
+            client-secret: "password"
+            client-name: "Client for user scope"
+            provider: "my-oauth-provider"
+            scope: "user"
+            redirect-uri: "{baseUrl}/authorized/user"
+            client-authentication-method: "client_secret_basic"
+            authorization-grant-type: "authorization_code"
+
+          my-client-2:
+            client-id: "abcd"
+            client-secret: "password"
+            client-name: "Client for email scope"
+            provider: "my-oauth-provider"
+            scope: "email"
+            redirect-uri: "{baseUrl}/authorized/email"
+            client-authentication-method: "client_secret_basic"
+            authorization-grant-type: "authorization_code"
+
+        provider:
+          my-oauth-provider:
+            authorization-uri: "https://my-auth-server.com/oauth2/authorize"
+            token-uri: "https://my-auth-server.com/oauth2/token"
+            user-info-uri: "https://my-auth-server.com/userinfo"
+            user-info-authentication-method: "header"
+            jwk-set-uri: "https://my-auth-server.com/oauth2/jwks"
+            user-name-attribute: "name"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>In this example, there are three registrations.
+In order of declaration, their IDs are <code>my-login-client</code>, <code>my-client-1</code>, and <code>my-client-2</code>.
+There is also a single provider with ID <code>my-oauth-provider</code>.</p>
+</div>
+<div class="paragraph">
+<p>For OpenID Connect providers that support <a href="https://openid.net/specs/openid-connect-discovery-1_0.html">OpenID Connect discovery</a>, the configuration can be further simplified.
+The provider needs to be configured with an <code>issuer-uri</code> which is the URI that it asserts as its Issuer Identifier.
+For example, if the <code>issuer-uri</code> provided is <code>https://example.com</code>, then an “OpenID Provider Configuration Request” will be made to <code>https://example.com/.well-known/openid-configuration</code>.
+The result is expected to be an “OpenID Provider Configuration Response”.
+The following example shows how an OpenID Connect Provider can be configured with the <code>issuer-uri</code>:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_3">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_3_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_3_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_3_properties" class="tabpanel" id="_tabs_3_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.security.oauth2.client.provider.oidc-provider.issuer-uri=https://dev-123456.oktapreview.com/oauth2/default/</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_3_yaml" class="tabpanel" id="_tabs_3_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  security:
+    oauth2:
+      client:
+        provider:
+          oidc-provider:
+            issuer-uri: "https://dev-123456.oktapreview.com/oauth2/default/"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>By default, Spring Security’s <a class="apiref" href="https://docs.spring.io/spring-security/reference/7.1/api/java/org/springframework/security/oauth2/client/web/OAuth2LoginAuthenticationFilter.html"><code>OAuth2LoginAuthenticationFilter</code></a> only processes URLs matching <code>/login/oauth2/code/*</code>.
+If you want to customize the <code>redirect-uri</code> to use a different pattern, you need to provide configuration to process that custom pattern.
+For example, for servlet applications, you can add your own <a class="apiref" href="https://docs.spring.io/spring-security/reference/7.1/api/java/org/springframework/security/web/SecurityFilterChain.html"><code>SecurityFilterChain</code></a> that resembles the following:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_4">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_4_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_4_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_4_java" class="tabpanel" id="_tabs_4_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+@EnableWebSecurity
+public class MyOAuthClientConfiguration {
+
+	@Bean
+	public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+		http.authorizeHttpRequests((requests) -&gt;
+			requests.anyRequest().authenticated()
+		);
+		http.oauth2Login((login) -&gt;
+			login.redirectionEndpoint((endpoint) -&gt;
+				endpoint.baseUri("/login/oauth2/callback/*")
+			)
+		);
+		return http.build();
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_4_kotlin" class="tabpanel" id="_tabs_4_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.annotation.web.invoke
+import org.springframework.security.web.SecurityFilterChain
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+@EnableWebSecurity
+open class MyOAuthClientConfiguration {
+
+	@Bean
+	open fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+		http {
+			authorizeHttpRequests {
+				authorize(anyRequest, authenticated)
+			}
+			oauth2Login {
+				redirectionEndpoint {
+					baseUri = "/login/oauth2/callback/*"
+				}
+			}
+		}
+		return http.build()
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Spring Boot auto-configures an <a class="apiref" href="https://docs.spring.io/spring-security/reference/7.1/api/java/org/springframework/security/oauth2/client/InMemoryOAuth2AuthorizedClientService.html"><code>InMemoryOAuth2AuthorizedClientService</code></a> which is used by Spring Security for the management of client registrations.
+The <a class="apiref" href="https://docs.spring.io/spring-security/reference/7.1/api/java/org/springframework/security/oauth2/client/InMemoryOAuth2AuthorizedClientService.html"><code>InMemoryOAuth2AuthorizedClientService</code></a> has limited capabilities and we recommend using it only for development environments.
+For production environments, consider using a <a class="apiref" href="https://docs.spring.io/spring-security/reference/7.1/api/java/org/springframework/security/oauth2/client/JdbcOAuth2AuthorizedClientService.html"><code>JdbcOAuth2AuthorizedClientService</code></a> or creating your own implementation of <a class="apiref" href="https://docs.spring.io/spring-security/reference/7.1/api/java/org/springframework/security/oauth2/client/OAuth2AuthorizedClientService.html"><code>OAuth2AuthorizedClientService</code></a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="security.oauth2.client.common-providers"><a class="anchor" href="#security.oauth2.client.common-providers"></a>OAuth2 Client Registration for Common Providers</h3>
+<div class="paragraph">
+<p>For common OAuth2 and OpenID providers (Google, Github, Facebook, X, and Okta), we provide a set of provider defaults.
+The IDs of these common providers are <code>google</code>, <code>github</code>, <code>facebook</code>, <code>x</code>, and <code>okta</code>, respectively.</p>
+</div>
+<div class="paragraph">
+<p>If you do not need to customize these providers, set the registration’s <code>provider</code> property to the ID of one of the common providers.
+Alternatively, you can <a href="#security.oauth2.client">use a registration ID that matches the ID of the provider</a>.
+The two configurations in the following example use the common <code>google</code> provider:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_5">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_5_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_5_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_5_properties" class="tabpanel" id="_tabs_5_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.security.oauth2.client.registration.my-client.client-id=abcd
+spring.security.oauth2.client.registration.my-client.client-secret=password
+spring.security.oauth2.client.registration.my-client.provider=google
+spring.security.oauth2.client.registration.google.client-id=abcd
+spring.security.oauth2.client.registration.google.client-secret=password</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_5_yaml" class="tabpanel" id="_tabs_5_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          my-client:
+            client-id: "abcd"
+            client-secret: "password"
+            provider: "google"
+          google:
+            client-id: "abcd"
+            client-secret: "password"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+<nav class="pagination">
+<span class="prev"><a href="index.html">Security</a></span>
+<span class="next"><a href="saml2.html">SAML 2.0</a></span>
+</nav>
+</article>
+</body></html>

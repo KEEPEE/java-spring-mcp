@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang='en'><head><title>reference web graceful-shutdown</title></head>
+<body>
+<div class="context">
+<span class="title">Spring Boot</span>
+<span class="version">4.1.1</span>
+
+
+</div><article class="doc">
+<div class="breadcrumbs-container">
+<nav aria-label="breadcrumbs" class="breadcrumbs">
+<ul>
+<li id="copy-url" title="Copy versioned URL"></li>
+<li><a href="../../index.html">Spring Boot</a></li>
+<li><a href="../index.html">Reference</a></li>
+<li><a href="index.html">Web</a></li>
+<li><a href="graceful-shutdown.html">Graceful Shutdown</a></li>
+</ul>
+</nav>
+</div><h1 class="page" id="page-title">Graceful Shutdown</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Graceful shutdown is enabled by default with all three embedded web servers (Jetty, Reactor Netty, and Tomcat) and with both reactive and servlet-based web applications.
+It occurs as part of closing the application context and is performed in the earliest phase of stopping <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/SmartLifecycle.html"><code>SmartLifecycle</code></a> beans.
+This stop processing uses a timeout which provides a grace period during which existing requests will be allowed to complete but no new requests will be permitted.</p>
+</div>
+<div class="paragraph">
+<p>To configure the timeout period, configure the <code>spring.lifecycle.timeout-per-shutdown-phase</code> property, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_1">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_1_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_1_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_1_properties" class="tabpanel" id="_tabs_1_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.lifecycle.timeout-per-shutdown-phase=20s</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_1_yaml" class="tabpanel" id="_tabs_1_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  lifecycle:
+    timeout-per-shutdown-phase: "20s"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Shutdown in your IDE may be immediate rather than graceful if it does not send a proper <code>SIGTERM</code> signal.
+See the documentation of your IDE for more details.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="web.graceful-shutdown.rejecting-requests-during-the-grace-period"><a class="anchor" href="#web.graceful-shutdown.rejecting-requests-during-the-grace-period"></a>Rejecting Requests During the Grace Period</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The exact way in which new requests are not permitted varies depending on the web server that is being used.
+Implementations may stop accepting requests at the network layer, or they may return a response with a specific HTTP status code or HTTP header.
+The use of persistent connections can also change the way that requests stop being accepted.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+To learn more about the specific method used with your web server, see the <code>shutDownGracefully</code> API documentation for <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/tomcat/TomcatWebServer.html#shutDownGracefully(org.springframework.boot.web.server.GracefulShutdownCallback)"><code>TomcatWebServer.shutDownGracefully(GracefulShutdownCallback)</code></a>, <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/reactor/netty/NettyWebServer.html#shutDownGracefully(org.springframework.boot.web.server.GracefulShutdownCallback)"><code>NettyWebServer.shutDownGracefully(GracefulShutdownCallback)</code></a>, or <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/jetty/JettyWebServer.html#shutDownGracefully(org.springframework.boot.web.server.GracefulShutdownCallback)"><code>JettyWebServer.shutDownGracefully(GracefulShutdownCallback)</code></a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Jetty, Reactor Netty, and Tomcat will stop accepting new requests at the network layer.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="web.graceful-shutdown.disabling-graceful-shutdown"><a class="anchor" href="#web.graceful-shutdown.disabling-graceful-shutdown"></a>Disabling Graceful Shutdown</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To disable graceful shutdown, configure the <code>server.shutdown</code> property, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_2">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_2_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_2_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_2_properties" class="tabpanel" id="_tabs_2_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">server.shutdown=immediate</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_2_yaml" class="tabpanel" id="_tabs_2_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">server:
+  shutdown: "immediate"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<nav class="pagination">
+<span class="prev"><a href="reactive.html">Reactive Web Applications</a></span>
+<span class="next"><a href="spring-security.html">Spring Security</a></span>
+</nav>
+</article>
+</body></html>

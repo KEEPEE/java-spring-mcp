@@ -1,0 +1,1569 @@
+<!DOCTYPE html>
+<html lang='en'><head><title>reference web servlet</title></head>
+<body>
+<div class="context">
+<span class="title">Spring Boot</span>
+<span class="version">4.1.1</span>
+
+
+</div><article class="doc">
+<div class="breadcrumbs-container">
+<nav aria-label="breadcrumbs" class="breadcrumbs">
+<ul>
+<li id="copy-url" title="Copy versioned URL"></li>
+<li><a href="../../index.html">Spring Boot</a></li>
+<li><a href="../index.html">Reference</a></li>
+<li><a href="index.html">Web</a></li>
+<li><a href="servlet.html">Servlet Web Applications</a></li>
+</ul>
+</nav>
+</div><h1 class="page" id="page-title">Servlet Web Applications</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you want to build servlet-based web applications, you can take advantage of Spring Boot’s auto-configuration for Spring MVC or Jersey.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="web.servlet.spring-mvc"><a class="anchor" href="#web.servlet.spring-mvc"></a>The “Spring Web MVC Framework”</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The <a href="https://docs.spring.io/spring-framework/reference/7.0/web/webmvc.html">Spring Web MVC framework</a> (often referred to as “Spring MVC”) is a rich “model view controller” web framework.
+Spring MVC lets you create special <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/stereotype/Controller.html"><code>@Controller</code></a> or <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/bind/annotation/RestController.html"><code>@RestController</code></a> beans to handle incoming HTTP requests.
+Methods in your controller are mapped to HTTP by using <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/bind/annotation/RequestMapping.html"><code>@RequestMapping</code></a> annotations.</p>
+</div>
+<div class="paragraph">
+<p>The following code shows a typical <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/bind/annotation/RestController.html"><code>@RestController</code></a> that serves JSON data:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_1">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_1_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_1_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_1_java" class="tabpanel" id="_tabs_1_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import java.util.List;
+
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+</span><span class="fold-block">@RestController
+@RequestMapping("/users")
+public class MyRestController {
+
+	private final UserRepository userRepository;
+
+	private final CustomerRepository customerRepository;
+
+	public MyRestController(UserRepository userRepository, CustomerRepository customerRepository) {
+		this.userRepository = userRepository;
+		this.customerRepository = customerRepository;
+	}
+
+	@GetMapping("/{userId}")
+	public User getUser(@PathVariable Long userId) {
+		return this.userRepository.findById(userId).get();
+	}
+
+	@GetMapping("/{userId}/customers")
+	public List&lt;Customer&gt; getUserCustomers(@PathVariable Long userId) {
+		return this.userRepository.findById(userId).map(this.customerRepository::findByUser).get();
+	}
+
+	@DeleteMapping("/{userId}")
+	public void deleteUser(@PathVariable Long userId) {
+		this.userRepository.deleteById(userId);
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_1_kotlin" class="tabpanel" id="_tabs_1_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+
+
+</span><span class="fold-block">@RestController
+@RequestMapping("/users")
+class MyRestController(private val userRepository: UserRepository, private val customerRepository: CustomerRepository) {
+
+	@GetMapping("/{userId}")
+	fun getUser(@PathVariable userId: Long): User {
+		return userRepository.findById(userId).get()
+	}
+
+	@GetMapping("/{userId}/customers")
+	fun getUserCustomers(@PathVariable userId: Long): List&lt;Customer&gt; {
+		return userRepository.findById(userId).map(customerRepository::findByUser).get()
+	}
+
+	@DeleteMapping("/{userId}")
+	fun deleteUser(@PathVariable userId: Long) {
+		userRepository.deleteById(userId)
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>“WebMvc.fn”, the functional variant, separates the routing configuration from the actual handling of the requests, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_2">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_2_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_2_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_2_java" class="tabpanel" id="_tabs_2_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
+import org.springframework.web.servlet.function.RequestPredicate;
+import org.springframework.web.servlet.function.RouterFunction;
+import org.springframework.web.servlet.function.ServerResponse;
+
+import static org.springframework.web.servlet.function.RequestPredicates.accept;
+import static org.springframework.web.servlet.function.RouterFunctions.route;
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+public class MyRoutingConfiguration {
+
+	private static final RequestPredicate ACCEPT_JSON = accept(MediaType.APPLICATION_JSON);
+
+	@Bean
+	public RouterFunction&lt;ServerResponse&gt; routerFunction(MyUserHandler userHandler) {
+		return route()
+				.GET("/{user}", ACCEPT_JSON, userHandler::getUser)
+				.GET("/{user}/customers", ACCEPT_JSON, userHandler::getUserCustomers)
+				.DELETE("/{user}", ACCEPT_JSON, userHandler::deleteUser)
+				.build();
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_2_kotlin" class="tabpanel" id="_tabs_2_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.http.MediaType
+import org.springframework.web.servlet.function.RequestPredicates.accept
+import org.springframework.web.servlet.function.RouterFunction
+import org.springframework.web.servlet.function.RouterFunctions
+import org.springframework.web.servlet.function.ServerResponse
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+class MyRoutingConfiguration {
+
+	@Bean
+	fun routerFunction(userHandler: MyUserHandler): RouterFunction&lt;ServerResponse&gt; {
+		return RouterFunctions.route()
+			.GET("/{user}", ACCEPT_JSON, userHandler::getUser)
+			.GET("/{user}/customers", ACCEPT_JSON, userHandler::getUserCustomers)
+			.DELETE("/{user}", ACCEPT_JSON, userHandler::deleteUser)
+			.build()
+	}
+
+	companion object {
+		private val ACCEPT_JSON = accept(MediaType.APPLICATION_JSON)
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_3">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_3_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_3_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_3_java" class="tabpanel" id="_tabs_3_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.function.ServerRequest;
+import org.springframework.web.servlet.function.ServerResponse;
+
+</span><span class="fold-block">@Component
+public class MyUserHandler {
+
+	public ServerResponse getUser(ServerRequest request) {
+		...
+	}
+
+	public ServerResponse getUserCustomers(ServerRequest request) {
+		...
+	}
+
+	public ServerResponse deleteUser(ServerRequest request) {
+		...
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_3_kotlin" class="tabpanel" id="_tabs_3_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import org.springframework.stereotype.Component
+import org.springframework.web.servlet.function.ServerRequest
+import org.springframework.web.servlet.function.ServerResponse
+
+</span><span class="fold-block">@Component
+class MyUserHandler {
+
+	fun getUser(request: ServerRequest?): ServerResponse {
+		...
+	}
+
+	fun getUserCustomers(request: ServerRequest?): ServerResponse {
+		...
+	}
+
+	fun deleteUser(request: ServerRequest?): ServerResponse {
+		...
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Spring MVC is part of the core Spring Framework, and detailed information is available in the <a href="https://docs.spring.io/spring-framework/reference/7.0/web/webmvc.html">reference documentation</a>.
+There are also several guides that cover Spring MVC available at <a class="bare" href="https://spring.io/guides">spring.io/guides</a>.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+You can define as many <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/function/RouterFunction.html"><code>RouterFunction</code></a> beans as you like to modularize the definition of the router.
+Beans can be ordered if you need to apply a precedence.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="web.servlet.spring-mvc.auto-configuration"><a class="anchor" href="#web.servlet.spring-mvc.auto-configuration"></a>Spring MVC Auto-configuration</h3>
+<div class="paragraph">
+<p>Spring Boot provides auto-configuration for Spring MVC that works well with most applications.
+It replaces the need for <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/config/annotation/EnableWebMvc.html"><code>@EnableWebMvc</code></a> and the two cannot be used together.
+In addition to Spring MVC’s defaults, the auto-configuration provides the following features:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Inclusion of <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/view/ContentNegotiatingViewResolver.html"><code>ContentNegotiatingViewResolver</code></a> and <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/view/BeanNameViewResolver.html"><code>BeanNameViewResolver</code></a> beans.</p>
+</li>
+<li>
+<p>Support for serving static resources, including support for WebJars (covered <a href="#web.servlet.spring-mvc.static-content">later in this document</a>).</p>
+</li>
+<li>
+<p>Automatic registration of <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/core/convert/converter/Converter.html"><code>Converter</code></a>, <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/core/convert/converter/GenericConverter.html"><code>GenericConverter</code></a>, and <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/format/Formatter.html"><code>Formatter</code></a> beans.</p>
+</li>
+<li>
+<p>Support for <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/http/converter/HttpMessageConverters.html"><code>HttpMessageConverters</code></a> (covered <a href="#web.servlet.spring-mvc.message-converters">later in this document</a>).</p>
+</li>
+<li>
+<p>Automatic registration of <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/validation/MessageCodesResolver.html"><code>MessageCodesResolver</code></a> (covered <a href="#web.servlet.spring-mvc.message-codes">later in this document</a>).</p>
+</li>
+<li>
+<p>Static <code>index.html</code> support.</p>
+</li>
+<li>
+<p>Automatic use of a <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/bind/support/ConfigurableWebBindingInitializer.html"><code>ConfigurableWebBindingInitializer</code></a> bean (covered <a href="#web.servlet.spring-mvc.binding-initializer">later in this document</a>).</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If you want to keep those Spring Boot MVC customizations and make more <a href="https://docs.spring.io/spring-framework/reference/7.0/web/webmvc.html">MVC customizations</a> (interceptors, formatters, view controllers, and other features), you can add your own <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Configuration.html"><code>@Configuration</code></a> class of type <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/config/annotation/WebMvcConfigurer.html"><code>WebMvcConfigurer</code></a> but <strong>without</strong> <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/config/annotation/EnableWebMvc.html"><code>@EnableWebMvc</code></a>.</p>
+</div>
+<div class="paragraph">
+<p>If you want to provide custom instances of <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/mvc/method/annotation/RequestMappingHandlerMapping.html"><code>RequestMappingHandlerMapping</code></a>, <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/mvc/method/annotation/RequestMappingHandlerAdapter.html"><code>RequestMappingHandlerAdapter</code></a>, or <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/mvc/method/annotation/ExceptionHandlerExceptionResolver.html"><code>ExceptionHandlerExceptionResolver</code></a>, and still keep the Spring Boot MVC customizations, you can declare a bean of type <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/webmvc/autoconfigure/WebMvcRegistrations.html"><code>WebMvcRegistrations</code></a> and use it to provide custom instances of those components.
+The custom instances will be subject to further initialization and configuration by Spring MVC.
+To participate in, and if desired, override that subsequent processing, a <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/config/annotation/WebMvcConfigurer.html"><code>WebMvcConfigurer</code></a> should be used.</p>
+</div>
+<div class="paragraph">
+<p>If you do not want to use the auto-configuration and want to take complete control of Spring MVC, add your own <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Configuration.html"><code>@Configuration</code></a> annotated with <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/config/annotation/EnableWebMvc.html"><code>@EnableWebMvc</code></a>.
+Alternatively, add your own <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Configuration.html"><code>@Configuration</code></a>-annotated <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/config/annotation/DelegatingWebMvcConfiguration.html"><code>DelegatingWebMvcConfiguration</code></a> as described in the <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/config/annotation/EnableWebMvc.html"><code>@EnableWebMvc</code></a> API documentation.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="web.servlet.spring-mvc.conversion-service"><a class="anchor" href="#web.servlet.spring-mvc.conversion-service"></a>Spring MVC Conversion Service</h3>
+<div class="paragraph">
+<p>Spring MVC uses a different <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/core/convert/ConversionService.html"><code>ConversionService</code></a> to the one used to convert values from your <code>application.properties</code> or <code>application.yaml</code> file.
+It means that <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/Period.html"><code>Period</code></a>, <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/Duration.html"><code>Duration</code></a> and <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/util/unit/DataSize.html"><code>DataSize</code></a> converters are not available and that <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/convert/DurationUnit.html"><code>@DurationUnit</code></a> and <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/convert/DataSizeUnit.html"><code>@DataSizeUnit</code></a> annotations will be ignored.</p>
+</div>
+<div class="paragraph">
+<p>If you want to customize the <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/core/convert/ConversionService.html"><code>ConversionService</code></a> used by Spring MVC, you can provide a <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/config/annotation/WebMvcConfigurer.html"><code>WebMvcConfigurer</code></a> bean with an <code>addFormatters</code> method.
+From this method you can register any converter that you like, or you can delegate to the static methods available on <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/convert/ApplicationConversionService.html"><code>ApplicationConversionService</code></a>.</p>
+</div>
+<div class="paragraph">
+<p>Conversion can also be customized using the <code>spring.mvc.format.*</code> configuration properties.
+When not configured, the following defaults are used:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;"/>
+<col style="width: 33.3333%;"/>
+<col style="width: 33.3334%;"/>
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Property</th>
+<th class="tableblock halign-left valign-top"><code>DateTimeFormatter</code></th>
+<th class="tableblock halign-left valign-top">Formats</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.mvc.format.date</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ofLocalizedDate(FormatStyle.SHORT)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>java.util.Date</code> and <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/LocalDate.html"><code>LocalDate</code></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.mvc.format.time</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ofLocalizedTime(FormatStyle.SHORT)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">java.time’s <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/LocalTime.html"><code>LocalTime</code></a> and <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/OffsetTime.html"><code>OffsetTime</code></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>spring.mvc.format.date-time</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ofLocalizedDateTime(FormatStyle.SHORT)</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">java.time’s <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/LocalDateTime.html"><code>LocalDateTime</code></a>, <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/OffsetDateTime.html"><code>OffsetDateTime</code></a>, and <a class="apiref" href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/time/ZonedDateTime.html"><code>ZonedDateTime</code></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="web.servlet.spring-mvc.message-converters"><a class="anchor" href="#web.servlet.spring-mvc.message-converters"></a>HttpMessageConverters</h3>
+<div class="paragraph">
+<p>Spring MVC uses the <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/http/converter/HttpMessageConverter.html"><code>HttpMessageConverter</code></a> interface to convert HTTP requests and responses.
+Sensible defaults are included out of the box.
+For example, objects can be automatically converted to JSON (by using the Jackson library) or XML (by using the Jackson XML extension, if available, or by using JAXB if the Jackson XML extension is not available).
+By default, strings are encoded in <code>UTF-8</code>.</p>
+</div>
+<div class="paragraph">
+<p>Any <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/http/converter/HttpMessageConverter.html"><code>HttpMessageConverter</code></a> bean that is present in the context is added to the list of converters.
+You can also override default converters in the same way.</p>
+</div>
+<div class="paragraph">
+<p>If you need to add or customize converters, you can declare one or more <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/http/converter/autoconfigure/ClientHttpMessageConvertersCustomizer.html"><code>ClientHttpMessageConvertersCustomizer</code></a> or
+<a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/http/converter/autoconfigure/ServerHttpMessageConvertersCustomizer.html"><code>ServerHttpMessageConvertersCustomizer</code></a> as beans. There, you can choose whether converter instances should be added
+before default ones (<code>addCustomConverter</code>) or if they should override a specific default converter (like <code>withJsonConverter</code>).</p>
+</div>
+<div class="paragraph">
+<p>See the following listing for an example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_4">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_4_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_4_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_4_java" class="tabpanel" id="_tabs_4_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import java.text.SimpleDateFormat;
+
+import tools.jackson.databind.json.JsonMapper;
+
+import org.springframework.boot.http.converter.autoconfigure.ClientHttpMessageConvertersCustomizer;
+import org.springframework.boot.http.converter.autoconfigure.ServerHttpMessageConvertersCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.HttpMessageConverters.ClientBuilder;
+import org.springframework.http.converter.HttpMessageConverters.ServerBuilder;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+public class MyHttpMessageConvertersConfiguration {
+
+	@Bean
+	public ClientHttpMessageConvertersCustomizer myClientConvertersCustomizer() {
+		return (clientBuilder) -&gt; clientBuilder.addCustomConverter(new AdditionalHttpMessageConverter())
+			.addCustomConverter(new AnotherHttpMessageConverter());
+	}
+
+	@Bean
+	public JacksonConverterCustomizer jacksonConverterCustomizer() {
+		JsonMapper jsonMapper = JsonMapper.builder().defaultDateFormat(new SimpleDateFormat("yyyy-MM")).build();
+		return new JacksonConverterCustomizer(jsonMapper);
+	}
+
+	// contribute a custom JSON converter to both client and server
+	static class JacksonConverterCustomizer
+			implements ClientHttpMessageConvertersCustomizer, ServerHttpMessageConvertersCustomizer {
+
+		private final JsonMapper jsonMapper;
+
+		JacksonConverterCustomizer(JsonMapper jsonMapper) {
+			this.jsonMapper = jsonMapper;
+		}
+
+		@Override
+		public void customize(ClientBuilder builder) {
+			builder.withJsonConverter(new JacksonJsonHttpMessageConverter(this.jsonMapper));
+		}
+
+		@Override
+		public void customize(ServerBuilder builder) {
+			builder.withJsonConverter(new JacksonJsonHttpMessageConverter(this.jsonMapper));
+		}
+
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_4_kotlin" class="tabpanel" id="_tabs_4_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import org.springframework.boot.http.converter.autoconfigure.ClientHttpMessageConvertersCustomizer
+import org.springframework.boot.http.converter.autoconfigure.ServerHttpMessageConvertersCustomizer
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.http.converter.HttpMessageConverters
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter
+import tools.jackson.databind.json.JsonMapper
+import java.text.SimpleDateFormat
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+class MyHttpMessageConvertersConfiguration {
+
+	@Bean
+	fun myClientConvertersCustomizer(): ClientHttpMessageConvertersCustomizer {
+		return ClientHttpMessageConvertersCustomizer { clientBuilder: HttpMessageConverters.ClientBuilder -&gt;
+			clientBuilder
+				.addCustomConverter(AdditionalHttpMessageConverter())
+				.addCustomConverter(AnotherHttpMessageConverter())
+		}
+	}
+
+	@Bean
+	fun jacksonConverterCustomizer(): JacksonConverterCustomizer {
+		val jsonMapper = JsonMapper.builder()
+			.defaultDateFormat(SimpleDateFormat("yyyy-MM"))
+			.build()
+		return JacksonConverterCustomizer(jsonMapper)
+	}
+
+	// contribute a custom JSON converter to both client and server
+	class JacksonConverterCustomizer(private val jsonMapper: JsonMapper) :
+		ClientHttpMessageConvertersCustomizer, ServerHttpMessageConvertersCustomizer {
+
+		override fun customize(builder: HttpMessageConverters.ClientBuilder) {
+			builder.withJsonConverter(JacksonJsonHttpMessageConverter(this.jsonMapper))
+		}
+
+		override fun customize(builder: HttpMessageConverters.ServerBuilder) {
+			builder.withJsonConverter(JacksonJsonHttpMessageConverter(this.jsonMapper))
+		}
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="web.servlet.spring-mvc.message-codes"><a class="anchor" href="#web.servlet.spring-mvc.message-codes"></a>MessageCodesResolver</h3>
+<div class="paragraph">
+<p>Spring MVC has a strategy for generating error codes for rendering error messages from binding errors: <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/validation/MessageCodesResolver.html"><code>MessageCodesResolver</code></a>.
+If you set the <code>spring.mvc.message-codes-resolver-format</code> property <code>PREFIX_ERROR_CODE</code> or <code>POSTFIX_ERROR_CODE</code>, Spring Boot creates one for you (see the enumeration in <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/validation/DefaultMessageCodesResolver.Format.html"><code>DefaultMessageCodesResolver.Format</code></a>).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="web.servlet.spring-mvc.static-content"><a class="anchor" href="#web.servlet.spring-mvc.static-content"></a>Static Content</h3>
+<div class="paragraph">
+<p>By default, Spring Boot serves static content from a directory called <code>/static</code> (or <code>/public</code> or <code>/resources</code> or <code>/META-INF/resources</code>) in the classpath or from the root of the <a class="apiref" href="https://jakarta.ee/specifications/servlet/6.1/apidocs/jakarta.servlet/jakarta/servlet/ServletContext.html"><code>ServletContext</code></a>.
+It uses the <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/resource/ResourceHttpRequestHandler.html"><code>ResourceHttpRequestHandler</code></a> from Spring MVC so that you can modify that behavior by adding your own <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/config/annotation/WebMvcConfigurer.html"><code>WebMvcConfigurer</code></a> and overriding the <code>addResourceHandlers</code> method.</p>
+</div>
+<div class="paragraph">
+<p>In a stand-alone web application, the default servlet from the container is not enabled.
+It can be enabled using the <code>server.servlet.register-default-servlet</code> property.</p>
+</div>
+<div class="paragraph">
+<p>The default servlet acts as a fallback, serving content from the root of the <a class="apiref" href="https://jakarta.ee/specifications/servlet/6.1/apidocs/jakarta.servlet/jakarta/servlet/ServletContext.html"><code>ServletContext</code></a> if Spring decides not to handle it.
+Most of the time, this does not happen (unless you modify the default MVC configuration), because Spring can always handle requests through the <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/DispatcherServlet.html"><code>DispatcherServlet</code></a>.</p>
+</div>
+<div class="paragraph">
+<p>By default, resources are mapped on <code>/**</code>, but you can tune that with the <code>spring.mvc.static-path-pattern</code> property.
+For instance, relocating all resources to <code>/resources/**</code> can be achieved as follows:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_5">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_5_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_5_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_5_properties" class="tabpanel" id="_tabs_5_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.mvc.static-path-pattern=/resources/**</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_5_yaml" class="tabpanel" id="_tabs_5_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  mvc:
+    static-path-pattern: "/resources/**"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also customize the static resource locations by using the <code>spring.web.resources.static-locations</code> property (replacing the default values with a list of directory locations).
+The root servlet context path, <code>"/"</code>, is automatically added as a location as well.</p>
+</div>
+<div class="paragraph">
+<p>In addition to the “standard” static resource locations mentioned earlier, a special case is made for <a href="https://www.webjars.org/">Webjars content</a>.
+By default, any resources with a path in <code>/webjars/**</code> are served from jar files if they are packaged in the Webjars format.
+The path can be customized with the <code>spring.mvc.webjars-path-pattern</code> property.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Do not use the <code>src/main/webapp</code> directory if your application is packaged as a jar.
+Although this directory is a common standard, it works <strong>only</strong> with war packaging, and it is silently ignored by most build tools if you generate a jar.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Spring Boot also supports the advanced resource handling features provided by Spring MVC, allowing use cases such as cache-busting static resources or using version agnostic URLs for Webjars.</p>
+</div>
+<div class="paragraph">
+<p>To use version agnostic URLs for Webjars, add the <code>org.webjars:webjars-locator-lite</code> dependency.
+Then declare your Webjar.
+Using jQuery as an example, adding <code>"/webjars/jquery/jquery.min.js"</code> results in <code>"/webjars/jquery/x.y.z/jquery.min.js"</code> where <code>x.y.z</code> is the Webjar version.</p>
+</div>
+<div class="paragraph">
+<p>To use cache busting, the following configuration configures a cache busting solution for all static resources, effectively adding a content hash, such as <code>&lt;link href="/css/spring-2a2d595e6ed9a0b24f027f2b63b134d6.css"/&gt;</code>, in URLs:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_6">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_6_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_6_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_6_properties" class="tabpanel" id="_tabs_6_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.web.resources.chain.strategy.content.enabled=true
+spring.web.resources.chain.strategy.content.paths=/**</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_6_yaml" class="tabpanel" id="_tabs_6_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  web:
+    resources:
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: "/**"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Links to resources are rewritten in templates at runtime, thanks to a <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/resource/ResourceUrlEncodingFilter.html"><code>ResourceUrlEncodingFilter</code></a> that is auto-configured for Thymeleaf and FreeMarker.
+You should manually declare this filter when using JSPs.
+Other template engines are currently not automatically supported but can be with custom template macros/helpers and the use of the <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/resource/ResourceUrlProvider.html"><code>ResourceUrlProvider</code></a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>When loading resources dynamically with, for example, a JavaScript module loader, renaming files is not an option.
+That is why other strategies are also supported and can be combined.
+A "fixed" strategy adds a static version string in the URL without changing the file name, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_7">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_7_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_7_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_7_properties" class="tabpanel" id="_tabs_7_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.web.resources.chain.strategy.content.enabled=true
+spring.web.resources.chain.strategy.content.paths=/**
+spring.web.resources.chain.strategy.fixed.enabled=true
+spring.web.resources.chain.strategy.fixed.paths=/js/lib/
+spring.web.resources.chain.strategy.fixed.version=v12</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_7_yaml" class="tabpanel" id="_tabs_7_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  web:
+    resources:
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: "/**"
+          fixed:
+            enabled: true
+            paths: "/js/lib/"
+            version: "v12"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>With this configuration, JavaScript modules located under <code>"/js/lib/"</code> use a fixed versioning strategy (<code>"/v12/js/lib/mymodule.js"</code>), while other resources still use the content one (<code>&lt;link href="/css/spring-2a2d595e6ed9a0b24f027f2b63b134d6.css"/&gt;</code>).</p>
+</div>
+<div class="paragraph">
+<p>See <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/autoconfigure/web/WebProperties.Resources.html"><code>WebProperties.Resources</code></a> for more supported options.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>This feature has been thoroughly described in a dedicated <a href="https://spring.io/blog/2014/07/24/spring-framework-4-1-handling-static-web-resources">blog post</a> and in Spring Framework’s <a href="https://docs.spring.io/spring-framework/reference/7.0/web/webmvc/mvc-config/static-resources.html">reference documentation</a>.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="web.servlet.spring-mvc.welcome-page"><a class="anchor" href="#web.servlet.spring-mvc.welcome-page"></a>Welcome Page</h3>
+<div class="paragraph">
+<p>Spring Boot supports both static and templated welcome pages.
+It first looks for an <code>index.html</code> file in the configured static content locations.
+If one is not found, it then looks for an <code>index</code> template.
+If either is found, it is automatically used as the welcome page of the application.</p>
+</div>
+<div class="paragraph">
+<p>This only acts as a fallback for actual index routes defined by the application.
+The ordering is defined by the order of <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/HandlerMapping.html"><code>HandlerMapping</code></a> beans which is by default the following:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;"/>
+<col style="width: 50%;"/>
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>RouterFunctionMapping</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Endpoints declared with <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/function/RouterFunction.html"><code>RouterFunction</code></a> beans</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>RequestMappingHandlerMapping</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Endpoints declared in <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/stereotype/Controller.html"><code>@Controller</code></a> beans</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WelcomePageHandlerMapping</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The welcome page support</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="web.servlet.spring-mvc.favicon"><a class="anchor" href="#web.servlet.spring-mvc.favicon"></a>Custom Favicon</h3>
+<div class="paragraph">
+<p>As with other static resources, Spring Boot checks for a <code>favicon.ico</code> in the configured static content locations.
+If such a file is present, it is automatically used as the favicon of the application.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="web.servlet.spring-mvc.content-negotiation"><a class="anchor" href="#web.servlet.spring-mvc.content-negotiation"></a>Path Matching and Content Negotiation</h3>
+<div class="paragraph">
+<p>Spring MVC can map incoming HTTP requests to handlers by looking at the request path and matching it to the mappings defined in your application (for example, <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/bind/annotation/GetMapping.html"><code>@GetMapping</code></a> annotations on Controller methods).</p>
+</div>
+<div class="paragraph">
+<p>Spring Boot chooses to disable suffix pattern matching by default, which means that requests like <code>"GET /projects/spring-boot.json"</code> will not be matched to <code>@GetMapping("/projects/spring-boot")</code> mappings.
+This is considered as a <a href="https://docs.spring.io/spring-framework/reference/7.0/web/webmvc/mvc-controller/ann-requestmapping.html#mvc-ann-requestmapping-suffix-pattern-match">best practice for Spring MVC applications</a>.
+This feature was mainly useful in the past for HTTP clients which did not send proper "Accept" request headers; we needed to make sure to send the correct Content Type to the client.
+Nowadays, Content Negotiation is much more reliable.</p>
+</div>
+<div class="paragraph">
+<p>There are other ways to deal with HTTP clients that do not consistently send proper "Accept" request headers.
+Instead of using suffix matching, we can use a query parameter to ensure that requests like <code>"GET /projects/spring-boot?format=json"</code> will be mapped to <code>@GetMapping("/projects/spring-boot")</code>:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_8">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_8_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_8_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_8_properties" class="tabpanel" id="_tabs_8_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.mvc.contentnegotiation.favor-parameter=true</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_8_yaml" class="tabpanel" id="_tabs_8_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  mvc:
+    contentnegotiation:
+      favor-parameter: true</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Or if you prefer to use a different parameter name:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_9">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_9_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_9_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_9_properties" class="tabpanel" id="_tabs_9_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.mvc.contentnegotiation.favor-parameter=true
+spring.mvc.contentnegotiation.parameter-name=myparam</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_9_yaml" class="tabpanel" id="_tabs_9_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  mvc:
+    contentnegotiation:
+      favor-parameter: true
+      parameter-name: "myparam"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Most standard media types are supported out-of-the-box, but you can also define new ones:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_10">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_10_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_10_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_10_properties" class="tabpanel" id="_tabs_10_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.mvc.contentnegotiation.media-types.markdown=text/markdown</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_10_yaml" class="tabpanel" id="_tabs_10_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  mvc:
+    contentnegotiation:
+      media-types:
+        markdown: "text/markdown"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>As of Spring Framework 5.3, Spring MVC supports two strategies for matching request paths to controllers.
+By default, Spring Boot uses the <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/util/pattern/PathPatternParser.html"><code>PathPatternParser</code></a> strategy.
+<a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/util/pattern/PathPatternParser.html"><code>PathPatternParser</code></a> is an <a href="https://spring.io/blog/2020/06/30/url-matching-with-pathpattern-in-spring-mvc">optimized implementation</a> but comes with some restrictions compared to the <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/util/AntPathMatcher.html"><code>AntPathMatcher</code></a> strategy.
+<a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/util/pattern/PathPatternParser.html"><code>PathPatternParser</code></a> restricts usage of <a href="https://docs.spring.io/spring-framework/reference/7.0/web/webmvc/mvc-controller/ann-requestmapping.html#mvc-ann-requestmapping-uri-templates">some path pattern variants</a>.
+It is also incompatible with configuring the <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/DispatcherServlet.html"><code>DispatcherServlet</code></a> with a path prefix (<code>spring.mvc.servlet.path</code>).</p>
+</div>
+<div class="paragraph">
+<p>The strategy can be configured using the <code>spring.mvc.pathmatch.matching-strategy</code> configuration property, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_11">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_11_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_11_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_11_properties" class="tabpanel" id="_tabs_11_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.mvc.pathmatch.matching-strategy=ant-path-matcher</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_11_yaml" class="tabpanel" id="_tabs_11_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  mvc:
+    pathmatch:
+      matching-strategy: "ant-path-matcher"</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Spring MVC will throw a <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/NoHandlerFoundException.html"><code>NoHandlerFoundException</code></a> if a handler is not found for a request.
+Note that, by default, the <a href="#web.servlet.spring-mvc.static-content">serving of static content</a> is mapped to <code>/**</code> and will, therefore, provide a handler for all requests.
+If no static content is available, <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/resource/ResourceHttpRequestHandler.html"><code>ResourceHttpRequestHandler</code></a> will throw a <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/resource/NoResourceFoundException.html"><code>NoResourceFoundException</code></a>.
+For a <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/NoHandlerFoundException.html"><code>NoHandlerFoundException</code></a> to be thrown, set <code>spring.mvc.static-path-pattern</code> to a more specific value such as <code>/resources/**</code> or set <code>spring.web.resources.add-mappings</code> to <code>false</code> to disable serving of static content entirely.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="web.servlet.spring-mvc.binding-initializer"><a class="anchor" href="#web.servlet.spring-mvc.binding-initializer"></a>ConfigurableWebBindingInitializer</h3>
+<div class="paragraph">
+<p>Spring MVC uses a <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/bind/support/WebBindingInitializer.html"><code>WebBindingInitializer</code></a> to initialize a <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/bind/WebDataBinder.html"><code>WebDataBinder</code></a> for a particular request.
+If you create your own <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/bind/support/ConfigurableWebBindingInitializer.html"><code>ConfigurableWebBindingInitializer</code></a> <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Bean.html"><code>@Bean</code></a>, Spring Boot automatically configures Spring MVC to use it.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="web.servlet.spring-mvc.template-engines"><a class="anchor" href="#web.servlet.spring-mvc.template-engines"></a>Template Engines</h3>
+<div class="paragraph">
+<p>As well as REST web services, you can also use Spring MVC to serve dynamic HTML content.
+Spring MVC supports a variety of templating technologies, including Thymeleaf, FreeMarker, and JSPs.
+Also, many other templating engines include their own Spring MVC integrations.</p>
+</div>
+<div class="paragraph">
+<p>Spring Boot includes auto-configuration support for the following templating engines:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://freemarker.apache.org/docs/">FreeMarker</a></p>
+</li>
+<li>
+<p><a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_the_markuptemplateengine">Groovy</a></p>
+</li>
+<li>
+<p><a href="https://www.thymeleaf.org">Thymeleaf</a></p>
+</li>
+<li>
+<p><a href="https://mustache.github.io/">Mustache</a></p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+If possible, JSPs should be avoided.
+There are several <a href="#web.servlet.embedded-container.jsp-limitations">known limitations</a> when using them with embedded servlet containers.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>When you use one of these templating engines with the default configuration, your templates are picked up automatically from <code>src/main/resources/templates</code>.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Depending on how you run your application, your IDE may order the classpath differently.
+Running your application in the IDE from its main method results in a different ordering than when you run your application by using Maven or Gradle or from its packaged jar.
+This can cause Spring Boot to fail to find the expected template.
+If you have this problem, you can reorder the classpath in the IDE to place the module’s classes and resources first.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="web.servlet.spring-mvc.error-handling"><a class="anchor" href="#web.servlet.spring-mvc.error-handling"></a>Error Handling</h3>
+<div class="paragraph">
+<p>By default, Spring Boot provides an <code>/error</code> mapping that handles all errors in a sensible way, and it is registered as a “global” error page in the servlet container.
+For machine clients, it produces a JSON response with details of the error, the HTTP status, and the exception message.
+For browser clients, there is a “whitelabel” error view that renders the same data in HTML format (to customize it, add a <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/View.html"><code>View</code></a> that resolves to <code>error</code>).</p>
+</div>
+<div class="paragraph">
+<p>There are a number of <code>spring.web.error</code> properties that can be set if you want to customize the default error handling behavior.
+See the <a class="xref page" href="../../appendix/application-properties/index.html#appendix.application-properties.web">Web Properties</a> section of the Appendix.</p>
+</div>
+<div class="paragraph">
+<p>To replace the default behavior completely, you can implement <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/webmvc/error/ErrorController.html"><code>ErrorController</code></a> and register a bean definition of that type or add a bean of type <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/webmvc/error/ErrorAttributes.html"><code>ErrorAttributes</code></a> to use the existing mechanism but replace the contents.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+The <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/webmvc/autoconfigure/error/BasicErrorController.html"><code>BasicErrorController</code></a> can be used as a base class for a custom <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/webmvc/error/ErrorController.html"><code>ErrorController</code></a>.
+This is particularly useful if you want to add a handler for a new content type (the default is to handle <code>text/html</code> specifically and provide a fallback for everything else).
+To do so, extend <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/webmvc/autoconfigure/error/BasicErrorController.html"><code>BasicErrorController</code></a>, add a public method with a <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/bind/annotation/RequestMapping.html"><code>@RequestMapping</code></a> that has a <code>produces</code> attribute, and create a bean of your new type.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>As of Spring Framework 6.0, <a href="https://docs.spring.io/spring-framework/reference/7.0/web/webmvc/mvc-ann-rest-exceptions.html">RFC 9457 Problem Details</a> is supported.
+Spring MVC can produce custom error messages with the <code>application/problem+json</code> media type, like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
+	"type": "https://example.org/problems/unknown-project",
+	"title": "Unknown project",
+	"status": 404,
+	"detail": "No project found for id 'spring-unknown'",
+	"instance": "/projects/spring-unknown"
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This support can be enabled by setting <code>spring.mvc.problemdetails.enabled</code> to <code>true</code>.</p>
+</div>
+<div class="paragraph">
+<p>You can also define a class annotated with <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/bind/annotation/ControllerAdvice.html"><code>@ControllerAdvice</code></a> to customize the JSON document to return for a particular controller and/or exception type, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_12">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_12_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_12_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_12_java" class="tabpanel" id="_tabs_12_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.HttpServletRequest;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+</span><span class="fold-block">@ControllerAdvice(basePackageClasses = SomeController.class)
+public class MyControllerAdvice extends ResponseEntityExceptionHandler {
+
+	@ResponseBody
+	@ExceptionHandler(MyException.class)
+	public ResponseEntity&lt;?&gt; handleControllerException(HttpServletRequest request, Throwable ex) {
+		HttpStatus status = getStatus(request);
+		return new ResponseEntity&lt;&gt;(new MyErrorBody(status.value(), ex.getMessage()), status);
+	}
+
+	private HttpStatus getStatus(HttpServletRequest request) {
+		Integer code = (Integer) request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
+		HttpStatus status = HttpStatus.resolve(code);
+		return (status != null) ? status : HttpStatus.INTERNAL_SERVER_ERROR;
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_12_kotlin" class="tabpanel" id="_tabs_12_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import jakarta.servlet.RequestDispatcher
+import jakarta.servlet.http.HttpServletRequest
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.ControllerAdvice
+import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.ResponseBody
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
+
+</span><span class="fold-block">@ControllerAdvice(basePackageClasses = [SomeController::class])
+class MyControllerAdvice : ResponseEntityExceptionHandler() {
+
+	@ResponseBody
+	@ExceptionHandler(MyException::class)
+	fun handleControllerException(request: HttpServletRequest, ex: Throwable): ResponseEntity&lt;*&gt; {
+		val status = getStatus(request)
+		return ResponseEntity(MyErrorBody(status.value(), ex.message), status)
+	}
+
+	private fun getStatus(request: HttpServletRequest): HttpStatus {
+		val code = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE) as Int
+		val status = HttpStatus.resolve(code)
+		return status ?: HttpStatus.INTERNAL_SERVER_ERROR
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>In the preceding example, if <code>MyException</code> is thrown by a controller defined in the same package as <code>SomeController</code>, a JSON representation of the <code>MyErrorBody</code> POJO is used instead of the <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/webmvc/error/ErrorAttributes.html"><code>ErrorAttributes</code></a> representation.</p>
+</div>
+<div class="paragraph">
+<p>In some cases, errors handled at the controller level are not recorded by web observations or the <a class="xref page" href="../actuator/metrics.html#actuator.metrics.supported.spring-mvc">metrics infrastructure</a>.
+Applications can ensure that such exceptions are recorded with the observations by <a href="https://docs.spring.io/spring-framework/reference/7.0/integration/observability.html#observability.http-server.servlet">setting the handled exception on the observation context</a>.</p>
+</div>
+<div class="sect3">
+<h4 id="web.servlet.spring-mvc.error-handling.error-pages"><a class="anchor" href="#web.servlet.spring-mvc.error-handling.error-pages"></a>Custom Error Pages</h4>
+<div class="paragraph">
+<p>If you want to display a custom HTML error page for a given status code, you can add a file to an <code>/error</code> directory.
+Error pages can either be static HTML (that is, added under any of the static resource directories) or be built by using templates.
+The name of the file should be the exact status code or a series mask.</p>
+</div>
+<div class="paragraph">
+<p>For example, to map <code>404</code> to a static HTML file, your directory structure would be as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">src/
+ +- main/
+     +- java/
+     |   + &lt;source code&gt;
+     +- resources/
+         +- public/
+             +- error/
+             |   +- 404.html
+             +- &lt;other public assets&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To map all <code>5xx</code> errors by using a FreeMarker template, your directory structure would be as follows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">src/
+ +- main/
+     +- java/
+     |   + &lt;source code&gt;
+     +- resources/
+         +- templates/
+             +- error/
+             |   +- 5xx.ftlh
+             +- &lt;other templates&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For more complex mappings, you can also add beans that implement the <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/webmvc/autoconfigure/error/ErrorViewResolver.html"><code>ErrorViewResolver</code></a> interface, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_13">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_13_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_13_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_13_java" class="tabpanel" id="_tabs_13_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import java.util.Map;
+
+import jakarta.servlet.http.HttpServletRequest;
+
+import org.springframework.boot.webmvc.autoconfigure.error.ErrorViewResolver;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.servlet.ModelAndView;
+
+</span><span class="fold-block">public class MyErrorViewResolver implements ErrorViewResolver {
+
+	@Override
+	public ModelAndView resolveErrorView(HttpServletRequest request, HttpStatus status, Map&lt;String, Object&gt; model) {
+		// Use the request or status to optionally return a ModelAndView
+		if (status == HttpStatus.INSUFFICIENT_STORAGE) {
+			// We could add custom model values here
+			return new ModelAndView("myview");
+		}
+		return null;
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_13_kotlin" class="tabpanel" id="_tabs_13_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import jakarta.servlet.http.HttpServletRequest
+import org.springframework.boot.webmvc.autoconfigure.error.ErrorViewResolver
+import org.springframework.http.HttpStatus
+import org.springframework.web.servlet.ModelAndView
+
+</span><span class="fold-block">class MyErrorViewResolver : ErrorViewResolver {
+
+	override fun resolveErrorView(request: HttpServletRequest, status: HttpStatus,
+			model: Map&lt;String, Any&gt;): ModelAndView? {
+		// Use the request or status to optionally return a ModelAndView
+		if (status == HttpStatus.INSUFFICIENT_STORAGE) {
+			// We could add custom model values here
+			return ModelAndView("myview")
+		}
+		return null
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>You can also use regular Spring MVC features such as <a href="https://docs.spring.io/spring-framework/reference/7.0/web/webmvc/mvc-servlet/exceptionhandlers.html"><code>@ExceptionHandler</code> methods</a> and <a href="https://docs.spring.io/spring-framework/reference/7.0/web/webmvc/mvc-controller/ann-advice.html"><code>@ControllerAdvice</code></a>.
+The <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/webmvc/error/ErrorController.html"><code>ErrorController</code></a> then picks up any unhandled exceptions.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="web.servlet.spring-mvc.error-handling.error-pages-without-spring-mvc"><a class="anchor" href="#web.servlet.spring-mvc.error-handling.error-pages-without-spring-mvc"></a>Mapping Error Pages Outside of Spring MVC</h4>
+<div class="paragraph">
+<p>For applications that do not use Spring MVC, you can use the <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/web/error/ErrorPageRegistrar.html"><code>ErrorPageRegistrar</code></a> interface to directly register <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/web/error/ErrorPage.html"><code>ErrorPage</code></a> instances.
+This abstraction works directly with the underlying embedded servlet container and works even if you do not have a Spring MVC <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/DispatcherServlet.html"><code>DispatcherServlet</code></a>.</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_14">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_14_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_14_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_14_java" class="tabpanel" id="_tabs_14_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import org.springframework.boot.web.error.ErrorPage;
+import org.springframework.boot.web.error.ErrorPageRegistrar;
+import org.springframework.boot.web.error.ErrorPageRegistry;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+public class MyErrorPagesConfiguration {
+
+	@Bean
+	public ErrorPageRegistrar errorPageRegistrar() {
+		return this::registerErrorPages;
+	}
+
+	private void registerErrorPages(ErrorPageRegistry registry) {
+		registry.addErrorPages(new ErrorPage(HttpStatus.BAD_REQUEST, "/400"));
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_14_kotlin" class="tabpanel" id="_tabs_14_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import org.springframework.boot.web.error.ErrorPage
+import org.springframework.boot.web.error.ErrorPageRegistrar
+import org.springframework.boot.web.error.ErrorPageRegistry
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpStatus
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+class MyErrorPagesConfiguration {
+
+	@Bean
+	fun errorPageRegistrar(): ErrorPageRegistrar {
+		return ErrorPageRegistrar { registry: ErrorPageRegistry -&gt; registerErrorPages(registry) }
+	}
+
+	private fun registerErrorPages(registry: ErrorPageRegistry) {
+		registry.addErrorPages(ErrorPage(HttpStatus.BAD_REQUEST, "/400"))
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If you register an <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/web/error/ErrorPage.html"><code>ErrorPage</code></a> with a path that ends up being handled by a <a class="apiref" href="https://jakarta.ee/specifications/servlet/6.1/apidocs/jakarta.servlet/jakarta/servlet/Filter.html"><code>Filter</code></a> (as is common with some non-Spring web frameworks, like Jersey and Wicket), then the <a class="apiref" href="https://jakarta.ee/specifications/servlet/6.1/apidocs/jakarta.servlet/jakarta/servlet/Filter.html"><code>Filter</code></a> has to be explicitly registered as an <code>ERROR</code> dispatcher, as shown in the following example:
+</td>
+</tr>
+</table>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_15">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_15_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_15_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_15_java" class="tabpanel" id="_tabs_15_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import java.util.EnumSet;
+
+import jakarta.servlet.DispatcherType;
+
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+public class MyFilterConfiguration {
+
+	@Bean
+	public FilterRegistrationBean&lt;MyFilter&gt; myFilter() {
+		FilterRegistrationBean&lt;MyFilter&gt; registration = new FilterRegistrationBean&lt;&gt;(new MyFilter());
+		// ...
+		registration.setDispatcherTypes(EnumSet.allOf(DispatcherType.class));
+		return registration;
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_15_kotlin" class="tabpanel" id="_tabs_15_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import jakarta.servlet.DispatcherType
+import org.springframework.boot.web.servlet.FilterRegistrationBean
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import java.util.EnumSet
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+class MyFilterConfiguration {
+
+	@Bean
+	fun myFilter(): FilterRegistrationBean&lt;MyFilter&gt; {
+		val registration = FilterRegistrationBean(MyFilter())
+		// ...
+		registration.setDispatcherTypes(EnumSet.allOf(DispatcherType::class.java))
+		return registration
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the default <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/web/servlet/FilterRegistrationBean.html"><code>FilterRegistrationBean</code></a> does not include the <code>ERROR</code> dispatcher type.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="web.servlet.spring-mvc.error-handling.in-a-war-deployment"><a class="anchor" href="#web.servlet.spring-mvc.error-handling.in-a-war-deployment"></a>Error Handling in a WAR Deployment</h4>
+<div class="paragraph">
+<p>When deployed to a servlet container, Spring Boot uses its error page filter to forward a request with an error status to the appropriate error page.
+This is necessary as the servlet specification does not provide an API for registering error pages.
+Depending on the container that you are deploying your war file to and the technologies that your application uses, some additional configuration may be required.</p>
+</div>
+<div class="paragraph">
+<p>The error page filter can only forward the request to the correct error page if the response has not already been committed.
+By default, WebSphere Application Server 8.0 and later commits the response upon successful completion of a servlet’s service method.
+You should disable this behavior by setting <code>com.ibm.ws.webcontainer.invokeFlushAfterService</code> to <code>false</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="web.servlet.spring-mvc.cors"><a class="anchor" href="#web.servlet.spring-mvc.cors"></a>CORS Support</h3>
+<div class="paragraph">
+<p><a href="https://en.wikipedia.org/wiki/Cross-origin_resource_sharing">Cross-origin resource sharing</a> (CORS) is a <a href="https://www.w3.org/TR/cors/">W3C specification</a> implemented by <a href="https://caniuse.com/#feat=cors">most browsers</a> that lets you specify in a flexible way what kind of cross-domain requests are authorized, instead of using some less secure and less powerful approaches such as IFRAME or JSONP.</p>
+</div>
+<div class="paragraph">
+<p>As of version 4.2, Spring MVC <a href="https://docs.spring.io/spring-framework/reference/7.0/web/webmvc-cors.html">supports CORS</a>.
+Using <a href="https://docs.spring.io/spring-framework/reference/7.0/web/webmvc-cors.html#mvc-cors-controller">controller method CORS configuration</a> with <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/bind/annotation/CrossOrigin.html"><code>@CrossOrigin</code></a> annotations in your Spring Boot application does not require any specific configuration.
+<a href="https://docs.spring.io/spring-framework/reference/7.0/web/webmvc-cors.html#mvc-cors-global">Global CORS configuration</a> can be defined by registering a <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/config/annotation/WebMvcConfigurer.html"><code>WebMvcConfigurer</code></a> bean with a customized <code>addCorsMappings(CorsRegistry)</code> method, as shown in the following example:</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_16">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_16_java">
+<p>Java</p>
+</li>
+<li class="tab" id="_tabs_16_kotlin">
+<p>Kotlin</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_16_java" class="tabpanel" id="_tabs_16_java--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-java hljs" data-lang="java"><span class="fold-block is-hidden-folded">import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+public class MyCorsConfiguration {
+
+	@Bean
+	public WebMvcConfigurer corsConfigurer() {
+		return new WebMvcConfigurer() {
+
+			@Override
+			public void addCorsMappings(CorsRegistry registry) {
+				registry.addMapping("/api/**");
+			}
+
+		};
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_16_kotlin" class="tabpanel" id="_tabs_16_kotlin--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-kotlin hljs" data-lang="kotlin"><span class="fold-block is-hidden-folded">import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
+import org.springframework.web.servlet.config.annotation.CorsRegistry
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
+
+</span><span class="fold-block">@Configuration(proxyBeanMethods = false)
+class MyCorsConfiguration {
+
+	@Bean
+	fun corsConfigurer(): WebMvcConfigurer {
+		return object : WebMvcConfigurer {
+			override fun addCorsMappings(registry: CorsRegistry) {
+				registry.addMapping("/api/**")
+			}
+		}
+	}
+
+}</span></code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="web.servlet.spring-mvc.api-versioning"><a class="anchor" href="#web.servlet.spring-mvc.api-versioning"></a>API Versioning</h3>
+<div class="paragraph">
+<p>Spring MVC supports API versioning which can be used to evolve an HTTP API over time.
+The same <code>@Controller</code> path can be mapped multiple times to support different versions of the API.</p>
+</div>
+<div class="paragraph">
+<p>For more details see <a href="https://docs.spring.io/spring-framework/reference/7.0/web/webmvc/mvc-controller/ann-requestmapping.html#mvc-ann-requestmapping-version">Spring Framework’s reference documentation</a>.</p>
+</div>
+<div class="paragraph">
+<p>Once mappings have been added, you additionally need to configure Spring MVC so that it is able to use any version information sent with a request.
+Typically, versions are sent as HTTP headers, query parameters, media type parameters, or as part of the path.</p>
+</div>
+<div class="paragraph">
+<p>To configure Spring MVC, you can either use a <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/servlet/config/annotation/WebMvcConfigurer.html"><code>WebMvcConfigurer</code></a> bean and override the <code>configureApiVersioning(…​)</code> method, or you can use properties.</p>
+</div>
+<div class="paragraph">
+<p>For example, the following will use an <code>X-Version</code> HTTP header to obtain version information and default to <code>1.0.0</code> when no header is sent.</p>
+</div>
+<div class="openblock tabs is-sync is-loading" id="_tabs_17">
+<div class="content">
+<div class="ulist tablist">
+<ul>
+<li class="tab" id="_tabs_17_properties">
+<p>Properties</p>
+</li>
+<li class="tab" id="_tabs_17_yaml">
+<p>YAML</p>
+</li>
+</ul>
+</div>
+<div aria-labelledby="_tabs_17_properties" class="tabpanel" id="_tabs_17_properties--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-properties hljs" data-lang="properties">spring.mvc.apiversion.default=1.0.0
+spring.mvc.apiversion.use.header=X-Version</code></pre>
+</div>
+</div>
+</div>
+<div aria-labelledby="_tabs_17_yaml" class="tabpanel" id="_tabs_17_yaml--panel">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spring:
+  mvc:
+    apiversion:
+      default: 1.0.0
+      use:
+        header: X-Version</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If your setup requires multiple strategies, such as header and query parameter, consider declaring the order programmatically by overriding the <code>configureApiVersioning</code> method.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>For more complete control, you can also define <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/accept/ApiVersionResolver.html"><code>ApiVersionResolver</code></a>, <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/accept/ApiVersionParser.html"><code>ApiVersionParser</code></a> and <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/web/accept/ApiVersionDeprecationHandler.html"><code>ApiVersionDeprecationHandler</code></a> beans which will be injected into the auto-configured Spring MVC configuration.</p>
+</div>
+<div class="admonitionblock tip">
+
+</div>
+</div>
+</div>
+</div>
+
+
+<nav class="pagination">
+<span class="prev"><a href="index.html">Web</a></span>
+<span class="next"><a href="reactive.html">Reactive Web Applications</a></span>
+</nav>
+</article>
+</body></html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang='en'><head><title>reference features developing-auto-configuration</title></head>
+<body>
+<div class="context">
+<span class="title">Spring Boot</span>
+<span class="version">4.1.1</span>
+
+
+</div><article class="doc">
+<div class="breadcrumbs-container">
+<nav aria-label="breadcrumbs" class="breadcrumbs">
+<ul>
+<li id="copy-url" title="Copy versioned URL"></li>
+<li><a href="../../index.html">Spring Boot</a></li>
+<li><a href="../index.html">Reference</a></li>
+<li><a href="index.html">Core Features</a></li>
+<li><a href="developing-auto-configuration.html">Creating Your Own Auto-configuration</a></li>
+</ul>
+</nav>
+</div><h1 class="page" id="page-title">Creating Your Own Auto-configuration</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you work in a company that develops shared libraries, or if you work on an open-source or commercial library, you might want to develop your own auto-configuration.
+Auto-configuration classes can be bundled in external jars and still be picked up by Spring Boot.</p>
+</div>
+<div class="paragraph">
+<p>Auto-configuration can be associated to a “starter” that provides the auto-configuration code as well as the typical libraries that you would use with it.
+We first cover what you need to know to build your own auto-configuration and then we move on to the <a href="#features.developing-auto-configuration.custom-starter">typical steps required to create a custom starter</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="features.developing-auto-configuration.understanding-auto-configured-beans"><a class="anchor" href="#features.developing-auto-configuration.understanding-auto-configured-beans"></a>Understanding Auto-configured Beans</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Classes that implement auto-configuration are annotated with <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/autoconfigure/AutoConfiguration.html"><code>@AutoConfiguration</code></a>.
+This annotation itself is meta-annotated with <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Configuration.html"><code>@Configuration</code></a>, making auto-configurations standard <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Configuration.html"><code>@Configuration</code></a> classes.
+Additional <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Conditional.html"><code>@Conditional</code></a> annotations are used to constrain when the auto-configuration should apply.
+Usually, auto-configuration classes use <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/autoconfigure/condition/ConditionalOnClass.html"><code>@ConditionalOnClass</code></a> and <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/autoconfigure/condition/ConditionalOnMissingBean.html"><code>@ConditionalOnMissingBean</code></a> annotations.
+This ensures that auto-configuration applies only when relevant classes are found and when you have not declared your own <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Configuration.html"><code>@Configuration</code></a>.</p>
+</div>
+<div class="paragraph">
+<p>You can browse the source code of <a href="https://github.com/spring-projects/spring-boot/tree/v4.1.1/core/spring-boot-autoconfigure/src/main/java/org/springframework/boot/autoconfigure"><code>spring-boot-autoconfigure</code></a> to see the core <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/autoconfigure/AutoConfiguration.html"><code>@AutoConfiguration</code></a> classes that Spring provides (see the <a href="https://github.com/spring-projects/spring-boot/tree/v4.1.1/core/spring-boot-autoconfigure/src/main/resources/META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports"><code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code></a> file).
+You can also look at the equivalent file in other modules to see the auto-configurations that they provide.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="features.developing-auto-configuration.locating-auto-configuration-candidates"><a class="anchor" href="#features.developing-auto-configuration.locating-auto-configuration-candidates"></a>Locating Auto-configuration Candidates</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Boot checks for the presence of a <code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports</code> file within your published jar.
+The file should list your configuration classes, with one class name per line, as shown in the following example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">com.mycorp.libx.autoconfigure.LibXAutoConfiguration
+com.mycorp.libx.autoconfigure.LibXWebAutoConfiguration</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+You can add comments to the imports file using the <code>#</code> character.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+In the unusual case that an auto-configuration class is not a top-level class, its class name should use <code>$</code> to separate it from its containing class, for example <code>com.example.Outer$NestedAutoConfiguration</code>.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Auto-configurations must be loaded <em>only</em> by being named in the imports file.
+Make sure that they are defined in a specific package space and that they are never the target of component scanning.
+Furthermore, auto-configuration classes should not enable component scanning to find additional components.
+Specific <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Import.html"><code>@Import</code></a> annotations should be used instead.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>If your configuration needs to be applied in a specific order, you can use the <code>before</code>, <code>beforeName</code>, <code>after</code> and <code>afterName</code> attributes on the <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/autoconfigure/AutoConfiguration.html"><code>@AutoConfiguration</code></a> annotation or the dedicated <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/autoconfigure/AutoConfigureBefore.html"><code>@AutoConfigureBefore</code></a> and <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/autoconfigure/AutoConfigureAfter.html"><code>@AutoConfigureAfter</code></a> annotations.
+For example, if you provide web-specific configuration, your class may need to be applied after <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/webmvc/autoconfigure/WebMvcAutoConfiguration.html"><code>WebMvcAutoConfiguration</code></a>.</p>
+</div>
+<div class="paragraph">
+<p>If you want to order certain auto-configurations that should not have any direct knowledge of each other, you can also use <a class="apiref" href="https://docs.spring.io/spring-boot/4.1.1/api/java/org/springframework/boot/autoconfigure/AutoConfigureOrder.html"><code>@AutoConfigureOrder</code></a>.
+That annotation has the same semantic as the regular <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/core/annotation/Order.html"><code>@Order</code></a> annotation but provides a dedicated order for auto-configuration classes.</p>
+</div>
+<div class="paragraph">
+<p>As with standard <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/Configuration.html"><code>@Configuration</code></a> classes, the order in which auto-configuration classes are applied only affects the order in which their beans are defined.
+The order in which those beans are subsequently created is unaffected and is determined by each bean’s dependencies and any <a class="apiref" href="https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/context/annotation/DependsOn.html"><code>@DependsOn</code></a> relationships.</p>
+</div>
+<div class="sect2">
+<h3 id="features.developing-auto-configuration.locating-auto-configuration-candidates.deprecating"><a class="anchor" href="#features.developing-auto-configuration.locating-auto-configuration-candidates.deprecating"></a>Deprecating and Replacing Auto-configuration Classes</h3>
+<div class="paragraph">
+<p>You may need to occasionally deprecate auto-configuration classes and offer an alternative.
+For example, you may want to change the package name where your auto-configuration class resides.</p>
+</div>
+<div class="paragraph">
+<p>Since auto-configuration classes may be referenced in <code>before</code>/<code>after</code> ordering and <code>excludes</code>, you’ll need to add an additional file that tells Spring Boot how to deal with replacements.
+To define replacements, create a <code>META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.replacements</code> file indicating the link between the old class and the new one.</p>
+</div>
+<div class="paragraph">
+<p>For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">com.mycorp.libx.autoconfigure.LibXAutoConfiguration=com.mycorp.libx.autoconfigure.core.LibXAutoConfiguration</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The <code>AutoConfiguration.imports</code> file should also be updated to <em>only</em> reference the replacement class.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+
+
+
+<nav class="pagination">
+<span class="prev"><a href="dev-services.html">Development-time Services</a></span>
+<span class="next"><a href="kotlin.html">Kotlin Support</a></span>
+</nav>
+</article>
+</body></html>
