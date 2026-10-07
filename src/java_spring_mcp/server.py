@@ -36,12 +36,20 @@ Design rules (hard requirements):
 - Fetched content is cached in :class:`~java_spring_mcp.cache.DocCache` keyed
   by source URL: JDK docs TTL 7 days, Spring sections TTL 7 days, Maven
   metadata TTL 1 day. Failures are never cached.
+- Politeness: every request the tools make goes through
+  :mod:`java_spring_mcp.politeness` (robots.txt, per-host throttle, retry /
+  ``Retry-After``, conditional GET) and spends one request budget per tool call
+  (:func:`java_spring_mcp.fetchers.tool_budget`, cap
+  :data:`~java_spring_mcp.fetchers.FETCH_BUDGET_LIMIT`). ``java_status``
+  reports the layer's counters under a top-level ``politeness`` key — outside
+  ``checks``, so diagnostics can never make ``overall`` worse.
 """
 
 from __future__ import annotations
 
 import json
 import re
+import sqlite3
 from urllib.parse import urlencode
 
 import httpx
@@ -50,14 +58,17 @@ from mcp.server.fastmcp import FastMCP
 from . import __version__
 from .cache import DocCache
 from .fetchers import (
-    HEADERS,
+    FETCH_BUDGET_LIMIT,
     JDK_API_BASE,
     MAVEN_SEARCH_URL,
     SPRING_REFERENCE_BASE,
     fetch_jdk_class,
     fetch_maven_artifact,
     fetch_spring_boot_section,
+    get_politeness,
+    tool_budget,
 )
+from .politeness import default_robots_db_path
 from .search import load_index, search
 
 mcp = FastMCP("java-spring-mcp")
@@ -121,12 +132,18 @@ def _cache_get(key: str) -> dict | None:
 
 
 def _cache_set(key: str, value: dict, ttl_seconds: int) -> None:
-    """Store a doc dict under ``key``; cache-write failures are ignored."""
+    """Store a doc dict under ``key``; cache-write failures are ignored.
+
+    ``set_value`` (not ``set``) on purpose: the fetcher keeps the raw body and
+    the ``etag`` / ``last_modified`` of that same URL in the same row, and
+    ``set`` would clear them to NULL — the conditional GET would silently stop
+    happening while everything still looked fine.
+    """
     cache = _cache()
     if cache is None:
         return
     try:
-        cache.set(key, json.dumps(value), ttl_seconds)
+        cache.set_value(key, json.dumps(value), ttl_seconds)
     except Exception:
         pass
 
@@ -282,33 +299,98 @@ def _error_from(fetch_result: dict, context: str) -> dict:
 
 
 def _probe_endpoint(url: str) -> dict:
-    """Light GET probe (quick httpx, then a short curl fallback); never raises.
+    """Light GET probe through the politeness layer; never raises.
 
-    The curl fallback matters for hosts like search.maven.org whose edge
-    intermittently stalls Python TLS clients while serving curl fine — the
-    same behaviour fetchers._http_get works around.
+    The old version fell back to a ``curl`` subprocess for "edges that stall
+    Python TLS clients". That fallback is gone (see :mod:`.fetchers`) and a
+    health check that ignored robots.txt, throttle and retry would be a hole in
+    the layer anyway — a status tool that hammers the site is not a fix.
     """
     try:
         with httpx.Client(timeout=8.0, follow_redirects=True) as client:
-            resp = client.get(url, headers=HEADERS)
-        if resp.status_code < 400:
-            return {"status": "ok", "http_status": resp.status_code}
-    except Exception:
-        pass
-    try:
-        import subprocess
-
-        proc = subprocess.run(
-            ["curl", "-sS", "-o", "/dev/null", "-w", "%{http_code}",
-             "-L", "--max-time", "10", url],
-            capture_output=True, text=True, timeout=20,
-        )
-        code = int(proc.stdout.strip() or 0)
-        if code:
-            return {"status": "ok" if code < 400 else "error", "http_status": code}
+            response = get_politeness().get(client, url)
+        if response.blocked_by_robots or response.error:
+            return {
+                "status": "error",
+                "http_status": response.status_code,
+                "error": response.error or "blocked by robots.txt",
+            }
+        status_code = int(response.status_code) if response.status_code is not None else 0
+        return {"status": "ok" if status_code < 400 else "error", "http_status": status_code}
     except Exception as exc:
         return {"status": "error", "http_status": None, "error": f"{type(exc).__name__}: {exc}"}
-    return {"status": "error", "http_status": None, "error": "no response from httpx or curl"}
+
+
+def _robots_cache_rows() -> int | None:
+    """How many robots.txt records the politeness SQLite cache holds (read-only).
+
+    ``0`` when the file does not exist (the layer then runs on its in-memory
+    fallback — politeness still applies, it just forgets across restarts);
+    ``None`` when the path itself could not be resolved.
+    """
+    try:
+        path = default_robots_db_path()
+    except Exception:
+        return None
+    try:
+        import os
+
+        if not os.path.exists(path):
+            return 0
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        try:
+            return int(conn.execute("SELECT COUNT(*) FROM robots").fetchone()[0])
+        finally:
+            conn.close()
+    except Exception:
+        return 0
+
+
+def _politeness_report() -> dict:
+    """Politeness counters for ``java_status``; never raises.
+
+    Deliberately *outside* ``checks``: it is diagnostics, not a health signal,
+    so it must not drag ``overall`` to "degraded" on its own.
+    """
+    try:
+        stats = get_politeness().stats()
+    except Exception as exc:  # pragma: no cover - defensive
+        return {"status": "error", "error": f"{exc.__class__.__name__}: {exc}"}
+    return {
+        "status": "ok",
+        "disabled": bool(stats.get("disabled", False)),
+        "requests": int(stats.get("requests", 0)),
+        # A8 F1/F3: robots attempts are counted apart from content requests;
+        # ``requests + robots_requests`` is the true wire total.
+        "robots_requests": int(stats.get("robots_requests", 0)),
+        "robots_rows": _robots_cache_rows(),
+        "robots_fetches": int(stats.get("robots_fetches", 0)),
+        "robots_cache_hits": int(stats.get("robots_cache_hits", 0)),
+        "robots_negative": int(stats.get("robots_negative", 0)),
+        "robots_refreshed_unchanged": int(stats.get("robots_refreshed_unchanged", 0)),
+        "blocked_by_robots": int(stats.get("blocked_by_robots", 0)),
+        "throttle_waits": int(stats.get("throttle_waits", 0)),
+        "throttle_sleep_s": round(float(stats.get("throttle_sleep_s", 0.0)), 3),
+        # A8 F1: the robots subset of those waits — the evidence that a
+        # robots.txt fetch waits in the same per-host queue as a page request.
+        "robots_throttle_waits": int(stats.get("robots_throttle_waits", 0)),
+        "robots_throttle_sleep_s": round(float(stats.get("robots_throttle_sleep_s", 0.0)), 3),
+        # A8 F2/F4: hops the layer walked itself, and challenge-hook hits.
+        "redirect_hops": int(stats.get("redirect_hops", 0)),
+        "challenge_detected": int(stats.get("challenge_detected", 0)),
+        "challenge_retries": int(stats.get("challenge_retries", 0)),
+        "host_delays": stats.get("hosts", {}),
+        "budgets": stats.get("budgets", {}),
+        "budget_denied": int(stats.get("budget_denied", 0)),
+        "conditional": int(stats.get("conditional", 0)),
+        "conditional_skipped": int(stats.get("conditional_skipped", 0)),
+        "revalidated_304": int(stats.get("revalidated_304", 0)),
+        "retries_429": int(stats.get("retries_429", 0)),
+        "retry_after_honoured": int(stats.get("retry_after_honoured", 0)),
+        "retries_transport": int(stats.get("retries_transport", 0)),
+        "stalls": int(stats.get("stalls", 0)),
+        "errors": int(stats.get("errors", 0)),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -346,7 +428,12 @@ def java_docs(identifier: str, topic: str | None = None, max_tokens: int = 8000)
     the right name or package.
     """
     try:
-        return _java_docs_impl(identifier, topic, max_tokens)
+        # One request budget per tool call: the index page plus the module
+        # guesses below share it, so a wrong class name can never cost more
+        # than FETCH_BUDGET_LIMIT requests (A2 §2.3 measured 6, and 18 if
+        # Oracle ever answered 429).
+        with tool_budget("java_docs"):
+            return _java_docs_impl(identifier, topic, max_tokens)
     except Exception as exc:  # last-resort guard: never let an exception escape
         return {
             "error": f"unexpected failure: {type(exc).__name__}: {exc}",
@@ -397,6 +484,7 @@ def _java_docs_impl(identifier: str, topic: str | None, max_tokens: int) -> dict
         first = module or "java.base"
         candidates = [first] + [m for m in _FALLBACK_MODULES if m not in (first,)]
         last_error = "no fetch attempt made"
+        budget_hit = False
         for mod in candidates:
             url = _jdk_class_url(ident, mod)
             cached_doc = _cache_get(url)
@@ -418,9 +506,20 @@ def _java_docs_impl(identifier: str, topic: str | None, max_tokens: int) -> dict
                     topic=topic, max_tokens=max_tokens, cached=False,
                 )
             last_error = result.get("error") or "unknown failure"
+            if result.get("budget_exhausted"):
+                # Oracle answers a wrong name with HTTP 200, so nothing in the
+                # status line stops this loop — the budget does.  Trying the
+                # remaining modules would only add denials, not requests.
+                budget_hit = True
+                break
         return {
             "error": f"could not fetch javadoc for '{ident}': {last_error}",
-            "suggestion": "try java_search('...') to find the right name or package",
+            "suggestion": (
+                f"the per-call request budget ({FETCH_BUDGET_LIMIT}) ran out while guessing "
+                f"modules; try java_search('{ident}') to find the right package/module"
+                if budget_hit
+                else "try java_search('...') to find the right name or package"
+            ),
         }
 
     # --- rule (c): plain class names via the search index -------------------
@@ -485,6 +584,8 @@ def _java_docs_impl(identifier: str, topic: str | None, max_tokens: int) -> dict
                 topic=topic, max_tokens=max_tokens, cached=False, note=note,
             )
         last_error = result.get("error") or "unknown failure"
+        if result.get("budget_exhausted"):
+            break  # same reason as the module loop: the budget, not the status, stops it
     return {
         "error": f"could not fetch javadoc for '{ident}' (index match {chosen.get('package')}.{chosen.get('name')}): {last_error}",
         "suggestion": "try java_search('...') to find the right name or package",
@@ -502,7 +603,8 @@ def java_search(query: str, limit: int = 8) -> dict:
     score}], "index_stale"}.
     """
     try:
-        index = load_index()
+        with tool_budget("java_search"):
+            index = load_index()
         results = search(query, limit=limit, index=index)
         out: dict = {
             "query": query,
@@ -510,6 +612,9 @@ def java_search(query: str, limit: int = 8) -> dict:
             "results": results,
             "index_stale": bool(index.get("stale")),
         }
+        if index.get("partial"):
+            # A budget-truncated index (no JDK classes, Spring sections only).
+            out["index_partial"] = index.get("partial_reason") or True
         if index.get("error") and not results:
             out["note"] = f"search index unavailable: {index['error']}"
         return out
@@ -561,7 +666,11 @@ def maven_package(
                     out["cached"] = True
                     return out
 
-        result = fetch_maven_artifact(group_id, artifact_id, version)
+        # One tool call, one budget. The Maven lookup needs exactly one
+        # request today; the cap is here so a future change (javadoc fetching,
+        # the reserved ``max_tokens``) cannot silently fan out.
+        with tool_budget("maven_package"):
+            result = fetch_maven_artifact(group_id, artifact_id, version)
         if not result.get("ok"):
             return _error_from(result, "maven lookup failed")
 
@@ -594,6 +703,14 @@ def java_status() -> dict:
     "checks": {...}, "overall": "ok"|"degraded"|"error"} where overall is
     "error" when the search index is unavailable, "degraded" when any check
     fails, and "ok" otherwise.
+
+    Also returns a top-level ``politeness`` block with the politeness layer's
+    counters: robots cache rows/fetches/hits, requests blocked by robots.txt,
+    throttle waits and per-host delays, conditional GETs / 304 revalidations,
+    429 / transport retries, stalls, request budgets and whether the layer is
+    disabled (``JAVA_SPRING_MCP_POLITENESS_DISABLED``). It sits outside
+    ``checks`` on purpose: it is diagnostics and must never change
+    ``overall``.
     """
     try:
         checks: dict = {}
@@ -636,6 +753,8 @@ def java_status() -> dict:
             "version": __version__,
             "checks": checks,
             "overall": overall,
+            # Outside "checks": diagnostics, never a health signal (A3 §5.6).
+            "politeness": _politeness_report(),
         }
     except Exception as exc:
         return {

@@ -11,11 +11,22 @@ Builds a flat list of searchable entries:
 
 Public entry points:
 
-- ``build_index() -> dict`` — fetch + parse (touches the network; may raise).
+- ``build_index() -> dict`` — fetch + parse (touches the network; may raise on
+  an HTTP or parse failure, but **not** when the politeness request budget runs
+  out: that yields a *partial* index, see below).
 - ``load_index(force_refresh=False, max_age_seconds=604800) -> dict`` —
   cached access via :class:`~java_spring_mcp.cache.DocCache`; never raises.
 - ``search(query, limit=8, index=None) -> list[dict]`` — offline ranking over
   entry names; each result is a copy of the entry augmented with ``score``.
+
+Politeness: the index page is fetched through
+:mod:`java_spring_mcp.politeness` (robots.txt, per-host throttle) and spends a
+request budget — the enclosing tool call's budget when one is bound
+(:func:`java_spring_mcp.fetchers.tool_budget`), otherwise its own
+``index:docs.oracle.com`` budget of :data:`INDEX_BUDGET_LIMIT`. When the budget
+is exhausted the build does **not** raise: it returns the Spring-only index it
+can build offline, marked ``"partial": True`` + ``partial_reason``, and
+:func:`load_index` refuses to cache that truncated index for a week.
 
 No network access happens at import time.
 """
@@ -31,11 +42,12 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 
 from .cache import DocCache
-from .fetchers import JDK_API_BASE, SPRING_REFERENCE_BASE, _http_get
+from .fetchers import JDK_API_BASE, SPRING_REFERENCE_BASE, _http_get, current_budget
 
 __all__ = [
     "INDEX_KEY",
     "ALL_CLASSES_INDEX_URL",
+    "INDEX_BUDGET_LIMIT",
     "SPRING_SECTIONS",
     "DEFAULT_MAX_AGE_SECONDS",
     "build_index",
@@ -47,6 +59,15 @@ __all__ = [
 INDEX_KEY = "search-index"
 ALL_CLASSES_INDEX_URL = f"{JDK_API_BASE}/allclasses-index.html"
 DEFAULT_MAX_AGE_SECONDS = 604800  # one week
+
+#: Requests an index build may spend when no tool-call budget is bound.  The
+#: JDK index is a single page, so this is headroom rather than a working set
+#: (A2 §4.3 allows 40 for repos whose index is a multi-page crawl); the point
+#: is the ceiling, not the number.  Since A8 F3 one unit is one request on the
+#: wire, so a cold build pays robots.txt + the index page = 2 and a ``302``
+#: answer from Oracle costs a second unit for the hop — 4 left no room for a
+#: retry, 6 does (A9 smoke: cold build = 2 units of 6).
+INDEX_BUDGET_LIMIT = 6
 
 #: Fixed Spring Boot reference sections (static, verified to exist).
 SPRING_SECTIONS = [
@@ -164,24 +185,58 @@ def _spring_section_entries() -> list[dict]:
 # Index building / loading
 # ---------------------------------------------------------------------------
 
+def _index_budget() -> tuple[str, int]:
+    """Budget this index build should spend.
+
+    Inside a tool call the enclosing budget is shared, so an index build can
+    never be a back door around the per-call cap (A2 §4.3 measured 6 requests
+    for one wrong class name *plus* the index page).  Outside one — a bare
+    ``build_index()`` — the build gets its own scope.
+    """
+    bound = current_budget()
+    if bound is not None:
+        return bound
+    return f"index:{ALL_CLASSES_INDEX_URL.split('/')[2]}", INDEX_BUDGET_LIMIT
+
+
 def build_index() -> dict:
     """Fetch the allclasses-index page and build the full index.
 
-    Returns ``{"built_at": <iso8601 UTC>, "entries": [...]}``.  Unlike
-    :func:`load_index`, this function **may raise** (network or parse
-    failures) — callers that must not raise should use :func:`load_index`.
+    Returns ``{"built_at": <iso8601 UTC>, "entries": [...]}``.  On an HTTP or
+    transport failure this **raises** — callers that must not raise should use
+    :func:`load_index`.  On an exhausted request budget it does *not* raise: it
+    returns the offline Spring-only index with ``"partial": True`` and a
+    ``partial_reason``, because a partial index still answers ``spring:*``
+    queries and lets ``java_docs`` fall back to its own module resolution.
     """
-    response = _http_get(ALL_CLASSES_INDEX_URL)
-    if response.status_code >= 400:
+    scope, limit = _index_budget()
+    response = _http_get(ALL_CLASSES_INDEX_URL, budget_scope=scope, budget_limit=limit)
+
+    entries: list[dict] = []
+    partial_reason: str | None = None
+    if response.budget_exhausted:
+        partial_reason = (
+            f"request budget of {limit} for scope {scope!r} was exhausted before the "
+            f"JDK allclasses page could be fetched"
+        )
+    elif response.error:
+        raise RuntimeError(f"allclasses-index request failed: {response.error}")
+    elif response.status_code is not None and response.status_code >= 400:
         raise RuntimeError(
             f"allclasses-index request failed with HTTP {response.status_code}"
         )
-    entries = parse_allclasses_html(response.text, base_url=ALL_CLASSES_INDEX_URL)
+    else:
+        entries = parse_allclasses_html(response.text, base_url=ALL_CLASSES_INDEX_URL)
+
     entries.extend(_spring_section_entries())
-    return {
+    index: dict = {
         "built_at": datetime.now(timezone.utc).isoformat(),
         "entries": entries,
     }
+    if partial_reason is not None:
+        index["partial"] = True
+        index["partial_reason"] = partial_reason
+    return index
 
 
 def _valid_index(data) -> bool:
@@ -198,6 +253,8 @@ def load_index(force_refresh: bool = False, max_age_seconds: float = DEFAULT_MAX
       the old copy is returned with ``"stale": True``.
     - Rebuild failure with no usable cache: returns
       ``{"built_at": None, "entries": [], "error": ...}``.
+    - A **partial** (budget-truncated) rebuild is returned as-is and never
+      written to the cache.
 
     Never raises.
     """
@@ -244,7 +301,10 @@ def load_index(force_refresh: bool = False, max_age_seconds: float = DEFAULT_MAX
             "error": f"index build failed: {type(exc).__name__}: {exc}",
         }
 
-    if cache is not None:
+    if cache is not None and not index.get("partial"):
+        # A budget-truncated index is served once but never stored: caching it
+        # under a week-long TTL would freeze an intentionally incomplete class
+        # list and hide every JDK class from java_search until next week.
         try:
             cache.set(INDEX_KEY, json.dumps(index), max_age_seconds)
         except Exception:
