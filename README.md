@@ -1,5 +1,7 @@
 # java-spring-mcp
 
+[![MCP](https://img.shields.io/badge/MCP-server-6b46c1?logo=modelcontextprotocol&logoColor=white)](https://modelcontextprotocol.io) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Source: docs.oracle.com](https://img.shields.io/badge/source-docs.oracle.com%20%C2%B7%20docs.spring.io-blue)](https://docs.oracle.com/en/java/javase/26/docs/api/)
+
 An [MCP](https://modelcontextprotocol.io) (Model Context Protocol) server that gives AI coding agents **live JDK javadoc, Spring Boot reference documentation and Maven Central metadata** instead of whatever the model happens to remember. Pages are scraped from the official sites at request time, cached locally, and returned as clean markdown — so generated Java and Spring code targets real, current APIs rather than deprecated or invented ones.
 
 - **JDK classes** — scraped live from [docs.oracle.com](https://docs.oracle.com/en/java/javase/26/docs/api/) (all 41 modules: `java.base`, `java.sql`, `java.desktop`, `java.net.http`, …), ~4,700 classes with their module recorded, so a bare `HttpClient` resolves to `java.net.http` and not to a guess
