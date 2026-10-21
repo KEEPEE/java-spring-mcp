@@ -30,7 +30,9 @@ jobs:
         with:
           enable-cache: true
       - name: Install package and test dependencies
-        run: uv pip install --system -e . pytest
+        # The [dev] extra carries pytest-asyncio, which the async server-registration
+        # test needs; installing bare pytest left that test failing on every Python.
+        run: uv pip install --system -e ".[dev]"
       # The suite is fully offline: every HTTP call goes through httpx.MockTransport,
       # so CI never touches the documentation sites and results are deterministic.
       - name: Run tests
